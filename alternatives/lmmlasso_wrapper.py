@@ -18,7 +18,7 @@ class lmmlassomodel:
         import rpy2.robjects as robjects
         from rpy2.robjects import numpy2ri, pandas2ri
         r = robjects.r
-        r['source']('lmmlasso.r')
+        r['source']('alternatives/lmmlasso.r')
         get_lmmlasso_estimate = robjects.globalenv['get_lmmlasso_function']
 
         objects_groups = np.repeat(problem.group_labels, problem.groups_sizes)

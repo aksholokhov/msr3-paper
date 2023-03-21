@@ -18,7 +18,7 @@ class PCOModel:
         import rpy2.robjects as robjects
         from rpy2.robjects import numpy2ri, pandas2ri
         r = robjects.r
-        r['source']('pco.r')
+        r['source']('alternatives/pco.r')
         get_pco_estimate = robjects.globalenv['get_pco_estimate']
 
         objects_groups = np.repeat(problem.group_labels, problem.groups_sizes)

@@ -18,7 +18,7 @@ class FenceModel:
         import rpy2.robjects as robjects
         from rpy2.robjects import numpy2ri, pandas2ri
         r = robjects.r
-        r['source']('fence.r')
+        r['source']('alternatives/fence.r')
         get_fence_function = robjects.globalenv['get_fence_function']
 
         x, y, columns_labels = problem.to_x_y()

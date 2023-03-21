@@ -1,10 +1,13 @@
 name: msr3-paper
 dependencies:
   - python=3.8.11
+  - pandas
   - dask
   - distributed
   - seaborn
   - pip
   - tqdm
+  - rpy2
   - pip:
     - pysr3>=0.3.4
+    - rpy2

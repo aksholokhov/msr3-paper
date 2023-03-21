@@ -9,16 +9,17 @@ from pysr3.lme.models import SimpleLMEModel, L1LmeModel, L1LmeModelSR3, L0LmeMod
 from pysr3.lme.problems import FIXED_RANDOM
 from multiprocessing import cpu_count
 
-from bullying.bullying_example_new import generate_bullying_experiment
+from bullying.bullying_example import generate_bullying_experiment
 from comparison_table import generate_benchmark_table
 from alternatives.glmmlasso_wrapper import GMMLassoModel
 from intuition import run_intuition_experiment, plot_intuition_picture
 from alternatives.lmmlasso_wrapper import lmmlassomodel
 from test_model_performance import run_comparison_experiment
+from competitors_table import generate_competitors_table
 
 parser = argparse.ArgumentParser('pysr3 experiments')
 # experiment settings
-parser.add_argument('--experiments', type=str, default="intuition,L0,L1,ALASSO,SCAD,bullying", help='Which experiments to run. List them as one string separated by commas, e.g. "L0,L1". Choices: intuition, L0, L1, ALASSO, SCAD, competitors, bullying')
+parser.add_argument('--experiments', type=str, default="L0,L1,ALASSO,SCAD", help='Which experiments to run. List them as one string separated by commas, e.g. "L0,L1". Choices: intuition, L0, L1, ALASSO, SCAD, competitors, bullying')
 parser.add_argument('--trials_from', type=int, default=1, help='Each "trial" represents testing all algorithms listed in "experiments" (except intuition and bullying) on one synthetic problem. This parameter and trials_to define bounds. E.g. trials_from=1 (inclusive) and trials_to=5 (exclusive) means that all algorithms will be tested on 4 problems.')
 parser.add_argument('--trials_to', type=int, default=2, help='Each "trial" represents testing all algorithms listed in "experiments" (except intuition and bullying) on one synthetic problem. This parameter and trials_to define bounds. E.g. trials_from=1 (inclusive) and trials_to=5 (exclusive) means that all algorithms will be tested on 4 problems.')
 parser.add_argument('--use_dask', type=bool, default=True, help='Whether to use Dask Distributed to parallelize experimens. Highly recommended.')
@@ -26,7 +27,7 @@ parser.add_argument('--n_dask_workers', type=int, default=max(cpu_count() - 1, 1
 parser.add_argument('--random_seed', type=int, default=0, help='Experiments-wide random seed.')
 parser.add_argument('--base_folder', type=str, default=".", help='Path to the base folder (where this file is).')
 parser.add_argument('--experiment_name', type=str, default="local_debug", help='Name for this run. This script will create a folder named "results/experiment_name" where it will put all outputs of the experiments.')
-parser.add_argument('--add_timestamp', type=bool, default=True, help='Whether to add timestamp to experiment_name. Prevents overwriting your previous outputs when launching this script more than once.')
+parser.add_argument('--add_timestamp', type=bool, default=False, help='Whether to add timestamp to experiment_name. Prevents overwriting your previous outputs when launching this script more than once.')
 parser.add_argument('--worker_number', type=int, default=1, help='[For SLURM environment] Then number of this worker in SLURM array. Do not confuse it with n_dask_workers: the former is for parallelizing the trials over multiple nodes (e.g. on a SLURM cluster), the latter is for parallelizing experiments for one trial within one node.')
 parser.add_argument('--draw_benchmark_data', type=bool, default=False, help='Whether to produce the plots and benchmark tables after the experiments are done executing. Must be False when using SLURM.')
 parser.add_argument('--verbose', type=bool, default=True, help="Whether to print log and progress messages or execute silently.")
@@ -63,7 +64,7 @@ parser.add_argument('--information_criterion_for_model_selection', type=str, def
 args = parser.parse_args()
 
 base_folder = Path(args.base_folder)
-dataset_path = base_folder / "bullying_data.csv"
+dataset_path = base_folder / "bullying" / "bullying_data.csv"
 
 experiments_to_launch = set(args.experiments.split(','))
 
@@ -107,7 +108,7 @@ if __name__ == "__main__":
     tables_folder = experiment_folder / "tables"
 
     if not experiment_folder.exists():
-        print(f"Creating a folder for the experiments' outputs: {experiment_folder.absolute()}")
+        print(f"Creating a folder for the experiments' outputs: {experiment_folder}")
         experiment_folder.mkdir(parents=True, exist_ok=True)
         logs_folder.mkdir(parents=True, exist_ok=True)
         figures_folder.mkdir(parents=True, exist_ok=True)
@@ -119,7 +120,7 @@ if __name__ == "__main__":
 
     with open(args_pickle_name, 'wb') as f:
         pickle.dump(args, f)
-        print(f"This run's input parameters are saved as: \n {args_pickle_name.absolute()}")
+        print(f"This run's input parameters are saved as: \n {args_pickle_name}")
 
     if "intuition" in experiments_to_launch:
         print("Generate data and fit models for the 'intuition' experiment (Figure 3)")
@@ -209,7 +210,7 @@ if __name__ == "__main__":
             )
             logs_path = logs_folder / f"{experiment}_{args.worker_number}.log"
             logs.to_csv(logs_path)
-            print(f"{experiment} log saved to: \n {logs_path.absolute()}")
+            print(f"{experiment} log saved to: \n {logs_path}")
 
     if "L1" in experiments_to_launch:
         experiment = "L1"
@@ -255,7 +256,7 @@ if __name__ == "__main__":
             )
             logs_path = logs_folder / f"{experiment}_{args.worker_number}.log"
             logs.to_csv(logs_path)
-            print(f"{experiment} log saved to: \n {logs_path.absolute()}")
+            print(f"{experiment} log saved to: \n {logs_path}")
 
     if "ALASSO" in experiments_to_launch:
         experiment = "ALASSO"
@@ -305,7 +306,7 @@ if __name__ == "__main__":
             )
             logs_path = logs_folder / f"{experiment}_{args.worker_number}.log"
             logs.to_csv(logs_path)
-            print(f"{experiment} log saved to: \n {logs_path.absolute()}")
+            print(f"{experiment} log saved to: \n {logs_path}")
 
     if "SCAD" in experiments_to_launch:
         experiment = "SCAD"
@@ -357,7 +358,7 @@ if __name__ == "__main__":
 
     if "competitors" in experiments_to_launch:
         experiment = "competitors"
-        print(f"\n Run experiment for competitor libraries on L1 tasks (Table 3). Problems to solve [{args.trials_from}, {args.trials_to})")
+        print(f"\n Run experiment for alternative libraries on L1 tasks (Table 3). Problems to solve [{args.trials_from}, {args.trials_to})")
         logs = None
         # logs = pd.read_csv(logs_folder / "log_l1_experiment_2021-11-03 21:19:20.113759.csv")
         if logs is None:
@@ -399,7 +400,8 @@ if __name__ == "__main__":
             )
             logs_path = logs_folder / f"{experiment}_{args.worker_number}.log"
             logs.to_csv(logs_path)
-            print(f"{experiment} log saved to: \n {logs_path}")
+            print(f"Measurements for {experiment} are saved to: \n {logs_path}")
+            generate_competitors_table(logs_path, tables_folder)
 
     if "bullying" in experiments_to_launch:
         print("Run a feature-selection experiment on real-world data from the Bullying study. (Figure 6)")

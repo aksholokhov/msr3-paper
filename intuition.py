@@ -109,7 +109,7 @@ def run_intuition_experiment(seed, num_covariates, model_parameters, problem_par
         pickle.dump(result, file=f)
     with open(Path(logs_folder) / f"params_intuition_{now}.pickle", 'wb') as f:
         pickle.dump(params, file=f)
-    print(f"'Intuition' data saved as {Path(logs_folder).absolute() / f'log_intuition_{now}.pickle'}")
+    print(f"'Intuition' data saved as {Path(logs_folder) / f'log_intuition_{now}.pickle'}")
     return result, now
 
 

@@ -18,7 +18,7 @@ class GMMLassoModel:
         import rpy2.robjects as robjects
         from rpy2.robjects import numpy2ri, pandas2ri
         r = robjects.r
-        r['source']('glmmlasso.r')
+        r['source']('alternatives/glmmlasso.r')
         get_glmmlasso_fit = robjects.globalenv['get_glmmlasso_function']
 
         x, y, columns_labels = problem.to_x_y()

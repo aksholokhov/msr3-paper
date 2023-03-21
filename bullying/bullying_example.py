@@ -201,9 +201,10 @@ def generate_bullying_experiment(dataset_path, figures_directory):
     plot_selection(inclusion_betas_plot, nnz_tbetas[argmin_aic], beta_historic_significance,
                    beta_predicted_significance)
 
-    # figure1.savefig(paper_figures_folder / f"{dataset_path.stem}_fixed_feature_selection_{now}.png")
+    figure1.savefig(figures_directory / f"{dataset_path.stem}_fixed_feature_selection_{now}.pdf")
+    print(
+        f"Random feature selection saved as as {figures_directory / f'{dataset_path.stem}_random_feature_selection_{now}.pdf'}")
     ## Random feature selection plot
-    figure1.show()
 
 
 
@@ -240,8 +241,7 @@ def generate_bullying_experiment(dataset_path, figures_directory):
                    gamma_predicted_significance)
 
     figure2.savefig(figures_directory / f"{dataset_path.stem}_random_feature_selection_{now}.pdf")
-    figure2.show()
-    print(f"Inclusion figure saved as as {figures_directory / f'{dataset_path.stem}_random_feature_selection_{now}.pdf'}")
+    print(f"Random feature selection saved as as {figures_directory / f'{dataset_path.stem}_random_feature_selection_{now}.pdf'}")
 
     # plot the same data on two separate plots
     for i, feature in enumerate(["intercept", "time"] + categorical_features_columns):
@@ -276,7 +276,8 @@ def generate_bullying_experiment(dataset_path, figures_directory):
 
     figure3.tight_layout()
     figure3.savefig(figures_directory / f"{dataset_path.stem}_assessment_selection_{now}.pdf")
-    figure3.show()
+    print(
+        f'Assessment saved as as {figures_directory / f"{dataset_path.stem}_assessment_selection_{now}.pdf"}')
     pass
 
 
