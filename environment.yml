@@ -1,0 +1,9 @@
+name: msr3-paper
+dependencies:
+  - python=3.8.11
+  - dask
+  - distributed
+  - seaborn
+  - pip
+  - pip:
+    - pysr3
