@@ -76,7 +76,7 @@ def generate_competitors_table(path_to_dataset, tables_folder, ic='jones'):
             table_long.loc['Time', name] = mean_quantiles_3(pgd_time)
             table_long.loc['Iterations', name] = mean_quantiles_2(pgd_iter)
 
-    table_long.to_latex(tables_folder / f"competitors_table_long_competitors.tex")
-    table_long.to_csv(tables_folder / f"competitors_table_long_competitors.csv")
+    table_long.to_latex(tables_folder / f"competitors_table_long.tex")
+    table_long.to_csv(tables_folder / f"competitors_table_long.csv")
     print(
-        f"The table with performance comparison for alternative libraries was saved to:{tables_folder / f'competitors_table_long_{args.file_name}.tex'}")
+        f"The table with performance comparison for alternative libraries was saved to:{tables_folder / f'competitors_table_long.tex'}")

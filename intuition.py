@@ -87,7 +87,6 @@ def run_intuition_experiment(seed, num_covariates, model_parameters, problem_par
     beta_grid_sr3 = beta_grid_sr3.T
     gamma_grid_sr3 = gamma_grid_sr3.T
 
-    now = datetime.datetime.now()
     result = {
         "beta_grid_normal": beta_grid_normal,
         "gamma_grid_normal": gamma_grid_normal,
@@ -105,15 +104,15 @@ def run_intuition_experiment(seed, num_covariates, model_parameters, problem_par
         "lam": lam,
         "initial_parameters": initial_parameters,
     }
-    with open(Path(logs_folder) / f"log_intuition_{now}.pickle", 'wb') as f:
+    with open(Path(logs_folder) / f"log_intuition.pickle", 'wb') as f:
         pickle.dump(result, file=f)
-    with open(Path(logs_folder) / f"params_intuition_{now}.pickle", 'wb') as f:
+    with open(Path(logs_folder) / f"params_intuition.pickle", 'wb') as f:
         pickle.dump(params, file=f)
-    print(f"'Intuition' data saved as {Path(logs_folder) / f'log_intuition_{now}.pickle'}")
-    return result, now
+    print(f"Intuition data saved as {Path(logs_folder) / f'log_intuition.pickle'}")
+    return result, None
 
 
-def plot_intuition_picture(data, suffix=None, figures_folder=".",
+def plot_intuition_picture(data, figures_folder=".",
                            beta_lims=(-3, 3), gamma_lims=(0, 3), grid_dim=100, ):
     beta_grid_normal = data["beta_grid_normal"]
     gamma_grid_normal = data["gamma_grid_normal"]
@@ -154,6 +153,6 @@ def plot_intuition_picture(data, suffix=None, figures_folder=".",
     ax_gamma_sr3.set_title("MSR3-relaxation for $\gamma$ (random effects)")
     # ax_gamma_sr3.plot([0, lam], [lam, 0], c='b')
     ax_gamma_sr3.legend()
-    filename = Path(figures_folder) / f"intuition_{suffix if suffix else ''}.pdf"
+    filename = Path(figures_folder) / f"intuition.jpg"
     plt.savefig(filename)
-    print(f"'Intuition' figure (Figure 2) saved as {filename}")
+    print(f"Intuition figure (Figure 2) saved as {filename}")

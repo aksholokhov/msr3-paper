@@ -1,13 +1,17 @@
 name: msr3-paper
 dependencies:
-  - python=3.8.11
-  - pandas
-  - dask
-  - distributed
+  - python==3.8.11
+  - dask                # only if you want to do parallel execution with dask
+  - distributed         # same as above
+  - matplotlib-inline
+  - ipykernel
   - seaborn
   - pip
+  - ipywidgets
   - tqdm
-  - rpy2
+  - pandas              # walkthrough.ipynb needs it but the code itself does not
+  #- nbconvert==7.2.1     # only if you want to generate README.md from walkthrough.ipynb
+  #- mistune==2.0.4       # same as above
   - pip:
     - pysr3>=0.3.4
-    - rpy2
+    - rpy2                # only if you want to measure the performance of the competitors as well

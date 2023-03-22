@@ -26,7 +26,7 @@ parser.add_argument('--use_dask', type=bool, default=True, help='Whether to use 
 parser.add_argument('--n_dask_workers', type=int, default=max(cpu_count() - 1, 1), help='Number of Dask workers. Defaults to the number of your CPUs - 1.')
 parser.add_argument('--random_seed', type=int, default=0, help='Experiments-wide random seed.')
 parser.add_argument('--base_folder', type=str, default=".", help='Path to the base folder (where this file is).')
-parser.add_argument('--experiment_name', type=str, default="local_debug", help='Name for this run. This script will create a folder named "results/experiment_name" where it will put all outputs of the experiments.')
+parser.add_argument('--experiment_name', type=str, default="test_run", help='Name for this run. This script will create a folder named "results/experiment_name" where it will put all outputs of the experiments.')
 parser.add_argument('--add_timestamp', type=bool, default=False, help='Whether to add timestamp to experiment_name. Prevents overwriting your previous outputs when launching this script more than once.')
 parser.add_argument('--worker_number', type=int, default=1, help='[For SLURM environment] Then number of this worker in SLURM array. Do not confuse it with n_dask_workers: the former is for parallelizing the trials over multiple nodes (e.g. on a SLURM cluster), the latter is for parallelizing experiments for one trial within one node.')
 parser.add_argument('--draw_benchmark_data', type=bool, default=False, help='Whether to produce the plots and benchmark tables after the experiments are done executing. Must be False when using SLURM.')
@@ -157,7 +157,7 @@ if __name__ == "__main__":
             grid_dim=grid_dim,
             logs_folder=logs_folder,
         )
-        plot_intuition_picture(results, suffix=now,
+        plot_intuition_picture(results,
                                beta_lims=beta_lims,
                                gamma_lims=gamma_lims,
                                grid_dim=grid_dim,

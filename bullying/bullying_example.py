@@ -1,5 +1,4 @@
 from pathlib import Path
-from datetime import datetime
 
 import pandas as pd
 import numpy as np
@@ -35,8 +34,6 @@ historic_significance = {
 
 
 def generate_bullying_experiment(dataset_path, figures_directory):
-    now = datetime.now()
-
     data = pd.read_csv(dataset_path)
     data = data.rename({"cv_low_threshold_bullying": "cv_low_bullying"}, axis=1)
     # intercept does not need to be in the dataset
@@ -90,8 +87,8 @@ def generate_bullying_experiment(dataset_path, figures_directory):
     solution_plot.set_xlabel("Time")
     solution_plot.set_ylabel("Target")
 
-    plt.show()
-    # plt.savefig(paper_figures_folder / f"{dataset_path.name}_intercept_only_{now}.pdf")
+    plt.savefig(figures_directory / f"{dataset_path.name}_intercept_only.jpg")
+    plt.close()
 
     # plot coefficients trajectory
     figure1 = plt.figure(figsize=(13, 12))
@@ -201,9 +198,9 @@ def generate_bullying_experiment(dataset_path, figures_directory):
     plot_selection(inclusion_betas_plot, nnz_tbetas[argmin_aic], beta_historic_significance,
                    beta_predicted_significance)
 
-    figure1.savefig(figures_directory / f"{dataset_path.stem}_fixed_feature_selection_{now}.pdf")
+    figure1.savefig(figures_directory / f"{dataset_path.stem}_fixed_feature_selection.jpg")
     print(
-        f"Random feature selection saved as as {figures_directory / f'{dataset_path.stem}_random_feature_selection_{now}.pdf'}")
+        f"Random feature selection saved as as {figures_directory / f'{dataset_path.stem}_random_feature_selection.jpg'}")
     ## Random feature selection plot
 
 
@@ -240,8 +237,8 @@ def generate_bullying_experiment(dataset_path, figures_directory):
     plot_selection(inclusion_gammas_plot, nnz_tgammas[argmin_aic], gamma_historic_significance,
                    gamma_predicted_significance)
 
-    figure2.savefig(figures_directory / f"{dataset_path.stem}_random_feature_selection_{now}.pdf")
-    print(f"Random feature selection saved as as {figures_directory / f'{dataset_path.stem}_random_feature_selection_{now}.pdf'}")
+    figure2.savefig(figures_directory / f"{dataset_path.stem}_random_feature_selection.jpg")
+    print(f"Random feature selection saved as as {figures_directory / f'{dataset_path.stem}_random_feature_selection.jpg'}")
 
     # plot the same data on two separate plots
     for i, feature in enumerate(["intercept", "time"] + categorical_features_columns):
@@ -275,10 +272,10 @@ def generate_bullying_experiment(dataset_path, figures_directory):
     beta_assessment_plot.legend(handles + [Patch(facecolor='none', edgecolor='orange')], labels + ["Chosen by BIC"], bbox_to_anchor=(1.4, 1.0), loc='upper right')
 
     figure3.tight_layout()
-    figure3.savefig(figures_directory / f"{dataset_path.stem}_assessment_selection_{now}.pdf")
+    figure3.savefig(figures_directory / f"{dataset_path.stem}_assessment_selection.jpg")
     print(
-        f'Assessment saved as as {figures_directory / f"{dataset_path.stem}_assessment_selection_{now}.pdf"}')
-    pass
+        f'Assessment saved as as {figures_directory / f"{dataset_path.stem}_assessment_selection.jpg"}')
+    plt.close()
 
 
 def plot_selection(ax, x, y_true, y_pred, add_labels=True):

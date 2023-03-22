@@ -77,7 +77,7 @@ def generate_benchmark_table(args):
             plt.xlabel(r"$\eta$, MSR3 relaxation parameter")
             plt.ylabel("Accuracy of fixed and random effects identification")
             plt.legend()
-            plt.savefig(experiment_folder / "figures" / f"eta_dependence.pdf")
+            plt.savefig(experiment_folder / "figures" / f"eta_dependence.jpg")
             plt.show()
 
         f1_scores_pgd = []
@@ -214,7 +214,7 @@ def generate_benchmark_table(args):
                  ncol=1, fancybox=True)
     ax[1].legend(loc='upper left', bbox_to_anchor=(1.03, 1.02),
                  ncol=1, fancybox=True)
-    plt.savefig(experiment_folder / "figures" / "benchmark.pdf")
+    plt.savefig(experiment_folder / "figures" / "benchmark.jpg")
     plt.show()
 
     # generate small summary table
