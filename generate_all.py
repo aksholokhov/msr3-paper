@@ -19,7 +19,7 @@ from competitors_table import generate_competitors_table
 
 parser = argparse.ArgumentParser('pysr3 experiments')
 # experiment settings
-parser.add_argument('--experiments', type=str, default="L0,L1,ALASSO,SCAD", help='Which experiments to run. List them as one string separated by commas, e.g. "L0,L1". Choices: intuition, L0, L1, ALASSO, SCAD, competitors, bullying')
+parser.add_argument('--experiments', type=str, default="intuition,L0,L1,ALASSO,SCAD,bullying", help='Which experiments to run. List them as one string separated by commas, e.g. "L0,L1". Choices: intuition, L0, L1, ALASSO, SCAD, competitors, bullying')
 parser.add_argument('--trials_from', type=int, default=1, help='Each "trial" represents testing all algorithms listed in "experiments" (except intuition and bullying) on one synthetic problem. This parameter and trials_to define bounds. E.g. trials_from=1 (inclusive) and trials_to=5 (exclusive) means that all algorithms will be tested on 4 problems.')
 parser.add_argument('--trials_to', type=int, default=2, help='Each "trial" represents testing all algorithms listed in "experiments" (except intuition and bullying) on one synthetic problem. This parameter and trials_to define bounds. E.g. trials_from=1 (inclusive) and trials_to=5 (exclusive) means that all algorithms will be tested on 4 problems.')
 parser.add_argument('--use_dask', type=bool, default=True, help='Whether to use Dask Distributed to parallelize experimens. Highly recommended.')
@@ -29,7 +29,7 @@ parser.add_argument('--base_folder', type=str, default=".", help='Path to the ba
 parser.add_argument('--experiment_name', type=str, default="test_run", help='Name for this run. This script will create a folder named "results/experiment_name" where it will put all outputs of the experiments.')
 parser.add_argument('--add_timestamp', type=bool, default=False, help='Whether to add timestamp to experiment_name. Prevents overwriting your previous outputs when launching this script more than once.')
 parser.add_argument('--worker_number', type=int, default=1, help='[For SLURM environment] Then number of this worker in SLURM array. Do not confuse it with n_dask_workers: the former is for parallelizing the trials over multiple nodes (e.g. on a SLURM cluster), the latter is for parallelizing experiments for one trial within one node.')
-parser.add_argument('--draw_benchmark_data', type=bool, default=False, help='Whether to produce the plots and benchmark tables after the experiments are done executing. Must be False when using SLURM.')
+parser.add_argument('--draw_benchmark_data', type=bool, default=True, help='Whether to produce the plots and benchmark tables after the experiments are done executing. Must be False when using SLURM.')
 parser.add_argument('--verbose', type=bool, default=True, help="Whether to print log and progress messages or execute silently.")
 
 # problems settings
@@ -409,8 +409,10 @@ if __name__ == "__main__":
                                      figures_directory=figures_folder)
 
     if args.draw_benchmark_data:
-        generate_benchmark_table({
-            "experiments": set(experiments_to_launch.keys()) & {"L0", "L1", "ALASSO", "SCAD"},
-            "experiment_folder": experiment_folder,
-            "ic": args.information_criterion_for_model_selection
-        })
+        experiments_to_plot = set(experiments_to_launch) & {"L0", "L1", "ALASSO", "SCAD"}
+        if len(experiments_to_plot) > 0:
+            generate_benchmark_table({
+                "experiments": experiments_to_plot,
+                "experiment_folder": experiment_folder,
+                "ic": args.information_criterion_for_model_selection
+            })
