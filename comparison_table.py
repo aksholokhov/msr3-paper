@@ -19,7 +19,7 @@ parser.add_argument('--plot_etas_experiment', type=bool, default=True)  # true f
 
 
 def generate_benchmark_table(args):
-    experiment_folder = Path(args.experiment_folder)
+    experiment_folder = Path(args['experiment_folder'])
 
     table_long_index = pd.MultiIndex.from_product([["PGD", "MSR3", "MSR3-fast"],
                                                    ["Accuracy", "FE Accuracy", "RE Accuracy", "F1", "FE F1", "RE F1",
@@ -30,7 +30,7 @@ def generate_benchmark_table(args):
     plots_data = pd.DataFrame(columns=["Model", "Accuracy", "Time", "Regularizer"])
 
     data_files = {}
-    for alg in args.experiments:
+    for alg in args['experiments']:
         batches = []
         for path in (experiment_folder / "logs").iterdir():
             if path.name.split("_")[0] == alg:
@@ -59,7 +59,7 @@ def generate_benchmark_table(args):
         data["re_acc"] = (data["re_tp"] + data["re_tn"]) / (
                 data["re_tp"] + data["re_fn"] + data["re_tn"] + data["re_fp"])
 
-        if args.plot_etas_experiment and name == "L1":
+        if name == "L1":
             y_axis = "acc"
             for trial in [1, ]:
                 trial_data = data[(data['trial'] == trial) & (data['model'] == f"SR3-{name}")]
@@ -115,7 +115,7 @@ def generate_benchmark_table(args):
             pgd_data = trial_data[trial_data["model"] == name]
 
             if len(pgd_data) > 0 and pgd_data['converged'].mean() > 0.9:
-                pgd_argmin = pgd_data[args.ic].argmin()
+                pgd_argmin = pgd_data[args['ic']].argmin()
                 f1_scores_pgd.append(pgd_data.iloc[pgd_argmin]["f1"])
                 pgd_acc.append(pgd_data.iloc[pgd_argmin]["acc"])
                 pgd_fe_f1.append(pgd_data.iloc[pgd_argmin]["fe_f1"])
@@ -127,7 +127,7 @@ def generate_benchmark_table(args):
 
             sr3_data = trial_data[trial_data["model"] == f"SR3-{name}"]
             if len(sr3_data) > 0 and sr3_data['converged'].mean() > 0.9:
-                sr3_argmin = sr3_data[args.ic].argmin()
+                sr3_argmin = sr3_data[args['ic']].argmin()
                 f1_scores_sr3.append(sr3_data.iloc[sr3_argmin]["f1"])
                 sr3_acc.append(sr3_data.iloc[sr3_argmin]["acc"])
                 sr3_fe_f1.append(sr3_data.iloc[sr3_argmin]["fe_f1"])
@@ -140,7 +140,7 @@ def generate_benchmark_table(args):
 
             sr3p_data = trial_data[trial_data["model"] == f"SR3-{name}-P"]
             if len(sr3p_data) > 0 and sr3p_data['converged'].mean() > 0.9:
-                sr3p_argmin = sr3p_data[args.ic].argmin()
+                sr3p_argmin = sr3p_data[args['ic']].argmin()
                 f1_scores_sr3p.append(sr3p_data.iloc[sr3p_argmin]["f1"])
                 sr3p_acc.append(sr3p_data.iloc[sr3p_argmin]["acc"])
                 sr3p_fe_f1.append(sr3p_data.iloc[sr3p_argmin]["fe_f1"])
