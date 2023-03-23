@@ -24,7 +24,7 @@ source ~/.bashrc
 conda activate compute
 cd ~/storage/repos/msr3-paper
 
-time python jcgf_generate_all.py \
+time python generate_all.py \
   --experiments $experiments \
   --trials_from $trials_from \
   --trials_to $trials_to \
