@@ -110,13 +110,12 @@ if __name__ == "__main__":
     figures_folder = experiment_folder / "figures"
     tables_folder = experiment_folder / "tables"
 
-    if not experiment_folder.exists():
-        print(f"Creating a folder for the experiments' outputs: {experiment_folder}")
-        experiment_folder.mkdir(parents=True, exist_ok=True)
-        logs_folder.mkdir(parents=True, exist_ok=True)
-        figures_folder.mkdir(parents=True, exist_ok=True)
-        tables_folder.mkdir(parents=True, exist_ok=True)
-        data_folder.mkdir(parents=True, exist_ok=True)
+    print(f"Creating a folder for the experiments' outputs: {experiment_folder}")
+    experiment_folder.mkdir(parents=True, exist_ok=True)
+    logs_folder.mkdir(parents=True, exist_ok=True)
+    data_folder.mkdir(parents=True, exist_ok=True)
+    figures_folder.mkdir(parents=True, exist_ok=True)
+    tables_folder.mkdir(parents=True, exist_ok=True)
 
     # save the inputs of the experiment for reproducibility purposes
     args_pickle_name = logs_folder / f"experiment_inputs_{args.worker_number}.pickle"
@@ -340,7 +339,7 @@ if __name__ == "__main__":
                                                           max_iter_solver=args.max_iter_solver_pgd,
                                                           lam=10 ** lam)
             if "MSR3" in models_to_launch:
-                models['MSR3'] = lambda lam, ell: SCADLmeModelSR3(**model_parameters_copy,
+                models['SR3-SCAD'] = lambda lam, ell: SCADLmeModelSR3(**model_parameters_copy,
                                                                  stepping="fixed",
                                                                  lam=10 ** lam,
                                                                  ell=ell,
