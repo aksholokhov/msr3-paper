@@ -23,7 +23,7 @@ parser.add_argument('--experiments', type=str, default="intuition,L0,L1,ALASSO,S
 parser.add_argument('--models', type=str, default='PGD,MSR3,MSR3-fast', help="Which models to include to trials")
 parser.add_argument('--trials_from', type=int, default=1, help='Each "trial" represents testing all algorithms listed in "experiments" (except intuition and bullying) on one synthetic problem. This parameter and trials_to define bounds. E.g. trials_from=1 (inclusive) and trials_to=5 (exclusive) means that all algorithms will be tested on 4 problems.')
 parser.add_argument('--trials_to', type=int, default=2, help='Each "trial" represents testing all algorithms listed in "experiments" (except intuition and bullying) on one synthetic problem. This parameter and trials_to define bounds. E.g. trials_from=1 (inclusive) and trials_to=5 (exclusive) means that all algorithms will be tested on 4 problems.')
-parser.add_argument('--use_dask', type=bool, default=True, help='Whether to use Dask Distributed to parallelize experimens. Highly recommended.')
+parser.add_argument('--use_dask', type=int, default=1, help='Whether to use Dask Distributed to parallelize experimens. Highly recommended.')
 parser.add_argument('--n_dask_workers', type=int, default=max(cpu_count() - 1, 1), help='Number of Dask workers. Defaults to the number of your CPUs - 1.')
 parser.add_argument('--random_seed', type=int, default=0, help='Experiments-wide random seed.')
 parser.add_argument('--base_folder', type=str, default=".", help='Path to the base folder (where this file is).')
