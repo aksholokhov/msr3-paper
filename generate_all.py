@@ -69,7 +69,7 @@ dataset_path = base_folder / "bullying" / "bullying_data.csv"
 
 experiments_to_launch = set(args.experiments.split(','))
 models_to_launch = set(args.models.split(','))
-args.groups_sizes = tuple(args.groups_sizes.split(','))
+args.groups_sizes = tuple([int(a) for a in args.groups_sizes.split(',')])
 
 model_parameters = {
     "elastic_eps": args.elastic_eps,
