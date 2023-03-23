@@ -20,6 +20,7 @@ from competitors_table import generate_competitors_table
 parser = argparse.ArgumentParser('pysr3 experiments')
 # experiment settings
 parser.add_argument('--experiments', type=str, default="intuition,L0,L1,ALASSO,SCAD,bullying", help='Which experiments to run. List them as one string separated by commas, e.g. "L0,L1". Choices: intuition, L0, L1, ALASSO, SCAD, competitors, bullying')
+parser.add_argument('--models', type=str, default='PGD,MSR3,MSR3-fast', help="Which models to include to trials")
 parser.add_argument('--trials_from', type=int, default=1, help='Each "trial" represents testing all algorithms listed in "experiments" (except intuition and bullying) on one synthetic problem. This parameter and trials_to define bounds. E.g. trials_from=1 (inclusive) and trials_to=5 (exclusive) means that all algorithms will be tested on 4 problems.')
 parser.add_argument('--trials_to', type=int, default=2, help='Each "trial" represents testing all algorithms listed in "experiments" (except intuition and bullying) on one synthetic problem. This parameter and trials_to define bounds. E.g. trials_from=1 (inclusive) and trials_to=5 (exclusive) means that all algorithms will be tested on 4 problems.')
 parser.add_argument('--use_dask', type=bool, default=True, help='Whether to use Dask Distributed to parallelize experimens. Highly recommended.')
@@ -35,7 +36,7 @@ parser.add_argument('--verbose', type=bool, default=True, help="Whether to print
 # problems settings
 parser.add_argument('--num_covariates', type=int, default=19, help="Number of covariates for synthetic problems")
 parser.add_argument('--correlation_between_adjacent_covariates', type=float, default=0.0, help="Correlations between adjacent pairs of covariates.")
-parser.add_argument('--groups_sizes', type=tuple, default=(10, 15, 4, 8, 3, 5, 18, 9, 6), help="Group sizes")
+parser.add_argument('--groups_sizes', type=str, default="10,15,4,8,3,5,18,9,6", help="Group sizes")
 parser.add_argument('--true_coefs_min', type=float, default=0, help="Magnitude of the smallest coefficient")
 parser.add_argument('--true_coefs_max', type=float, default=9.5, help="Magnitude of the largest coefficient")
 parser.add_argument('--fit_fixed_intercept', type=bool, default=True, help="Whether to add the intercept as a fixed effect")
@@ -67,6 +68,8 @@ base_folder = Path(args.base_folder)
 dataset_path = base_folder / "bullying" / "bullying_data.csv"
 
 experiments_to_launch = set(args.experiments.split(','))
+models_to_launch = set(args.models.split(','))
+args.groups_sizes = tuple(*args.groups_sizes.split(','))
 
 model_parameters = {
     "elastic_eps": args.elastic_eps,
@@ -169,16 +172,16 @@ if __name__ == "__main__":
               f"Problems to solve: [{args.trials_from}, {args.trials_to})")
         logs = None
         if logs is None:
-            logs = run_comparison_experiment(
-                args=args,
-                models={
-                    "L0": lambda j, ell: L0LmeModel(**model_parameters,
+            models = {}
+            if "PGD" in models_to_launch:
+                models["L0"] = lambda j, ell: L0LmeModel(**model_parameters,
                                                     stepping="fixed",
                                                     fixed_step_len=args.fixed_step_size,
                                                     max_iter_solver=args.max_iter_solver_pgd,
                                                     nnz_tbeta=j,
-                                                    nnz_tgamma=j),
-                    "SR3-L0": lambda j, ell: L0LmeModelSR3(**model_parameters,
+                                                    nnz_tgamma=j)
+            if "MSR3" in models_to_launch:
+                models["SR3-L0"] = lambda j, ell: L0LmeModelSR3(**model_parameters,
                                                            stepping="fixed",
                                                            nnz_tbeta=j,
                                                            nnz_tgamma=j,
@@ -187,8 +190,9 @@ if __name__ == "__main__":
                                                            take_only_positive_part=args.take_only_positive_part,
                                                            take_expected_value=args.take_expected_value,
                                                            ell=ell
-                                                           ),
-                    "SR3-L0-P": lambda j, ell: L0LmeModelSR3(**model_parameters,
+                                                           )
+            if "MSR3-fast" in models_to_launch:
+                models["SR3-L0-P"] = lambda j, ell: L0LmeModelSR3(**model_parameters,
                                                              stepping="fixed",
                                                              nnz_tbeta=j,
                                                              nnz_tgamma=j,
@@ -198,19 +202,22 @@ if __name__ == "__main__":
                                                              take_expected_value=args.take_expected_value,
                                                              ell=ell
                                                              )
-                },
-                lambda_search_bounds=(1, args.num_covariates),
-                ell_search_grid=np.logspace(args.eta_min, args.eta_max, args.eta_num_evals),
-                true_beta=true_beta,
-                true_gamma=true_gamma,
-                problem_parameters=problem_parameters,
-                tol=np.sqrt(model_parameters["tol_solver"]),
-                dask_folder=dask_folder,
-                data_folder=data_folder
-            )
-            logs_path = logs_folder / f"{experiment}_{args.worker_number}.log"
-            logs.to_csv(logs_path)
-            print(f"{experiment} log saved to: \n {logs_path}")
+            if len(models) > 0:
+                logs = run_comparison_experiment(
+                    args=args,
+                    models=models,
+                    lambda_search_bounds=(1, args.num_covariates),
+                    ell_search_grid=np.logspace(args.eta_min, args.eta_max, args.eta_num_evals),
+                    problem_parameters=problem_parameters,
+                    tol=np.sqrt(model_parameters["tol_solver"]),
+                    true_beta=true_beta,
+                    true_gamma=true_gamma,
+                    dask_folder=dask_folder,
+                    data_folder=data_folder
+                )
+                logs_path = logs_folder / f"{experiment}_{args.worker_number}.log"
+                logs.to_csv(logs_path)
+                print(f"{experiment} log saved to: \n {logs_path}")
 
     if "L1" in experiments_to_launch:
         experiment = "L1"
@@ -218,45 +225,48 @@ if __name__ == "__main__":
               f"Problems to solve: [{args.trials_from}, {args.trials_to})")
         logs = None
         if logs is None:
-            logs = run_comparison_experiment(
-                args=args,
-                models={
-                    "L1": lambda lam, ell: L1LmeModel(**model_parameters,
+            models = {}
+            if "PGD" in models_to_launch:
+                models["L1"] = lambda lam, ell: L1LmeModel(**model_parameters,
                                                       stepping="fixed",
                                                       fixed_step_len=min(args.fixed_step_size / 10 ** lam,
                                                                          args.fixed_step_size),
                                                       max_iter_solver=args.max_iter_solver_pgd,
-                                                      lam=10 ** lam),
-                    "SR3-L1": lambda lam, ell: L1LmeModelSR3(**model_parameters,
+                                                      lam=10 ** lam)
+            if "MSR3" in models_to_launch:
+                models["SR3-L1"] = lambda lam, ell: L1LmeModelSR3(**model_parameters,
                                                              stepping="fixed",
                                                              lam=10 ** lam,
                                                              ell=ell,
                                                              max_iter_solver=args.max_iter_solver_sr3,
                                                              take_only_positive_part=args.take_only_positive_part,
                                                              take_expected_value=args.take_expected_value,
-                                                             practical=False),
-                    "SR3-L1-P": lambda lam, ell: L1LmeModelSR3(**model_parameters,
+                                                             practical=False)
+            if "MSR3-fast" in models_to_launch:
+                models['SR3-L1-P'] = lambda lam, ell: L1LmeModelSR3(**model_parameters,
                                                                stepping="fixed",
                                                                lam=10 ** lam,
                                                                ell=ell,
                                                                max_iter_solver=args.max_iter_solver_sr3,
                                                                take_only_positive_part=args.take_only_positive_part,
                                                                take_expected_value=args.take_expected_value,
-                                                               practical=True),
-
-                },
-                lambda_search_bounds=(-2, 4),
-                ell_search_grid=np.logspace(args.eta_min, args.eta_max, args.eta_num_evals),
-                true_beta=true_beta,
-                true_gamma=true_gamma,
-                problem_parameters=problem_parameters,
-                tol=np.sqrt(model_parameters["tol_solver"]),
-                dask_folder=dask_folder,
-                data_folder=data_folder
-            )
-            logs_path = logs_folder / f"{experiment}_{args.worker_number}.log"
-            logs.to_csv(logs_path)
-            print(f"{experiment} log saved to: \n {logs_path}")
+                                                               practical=True)
+            if len(models) > 0:
+                logs = run_comparison_experiment(
+                    args=args,
+                    models=models,
+                    lambda_search_bounds=(-2, 4),
+                    ell_search_grid=np.logspace(args.eta_min, args.eta_max, args.eta_num_evals),
+                    true_beta=true_beta,
+                    true_gamma=true_gamma,
+                    problem_parameters=problem_parameters,
+                    tol=np.sqrt(model_parameters["tol_solver"]),
+                    dask_folder=dask_folder,
+                    data_folder=data_folder
+                )
+                logs_path = logs_folder / f"{experiment}_{args.worker_number}.log"
+                logs.to_csv(logs_path)
+                print(f"{experiment} log saved to: \n {logs_path}")
 
     if "ALASSO" in experiments_to_launch:
         experiment = "ALASSO"
@@ -265,22 +275,23 @@ if __name__ == "__main__":
         logs = None
 
         if logs is None:
-            logs = run_comparison_experiment(
-                args=args,
-                models={
-                    "ALASSO": lambda lam, ell: L1LmeModel(**model_parameters,
+            models = {}
+            if "PGD" in models_to_launch:
+                models['ALASSO'] = lambda lam, ell: L1LmeModel(**model_parameters,
                                                           stepping="fixed",
                                                           fixed_step_len=min(args.fixed_step_size / 10 ** lam,
                                                                              args.fixed_step_size),
                                                           max_iter_solver=args.max_iter_solver_pgd,
-                                                          lam=10 ** lam),
-                    "SR3-ALASSO": lambda lam, ell: L1LmeModelSR3(**model_parameters,
+                                                          lam=10 ** lam)
+            if "MSR3" in models_to_launch:
+                models['SR3-ALASSO'] = lambda lam, ell: L1LmeModelSR3(**model_parameters,
                                                                  stepping="fixed",
                                                                  lam=10 ** lam,
                                                                  ell=ell,
                                                                  max_iter_solver=args.max_iter_solver_sr3,
-                                                                 practical=False),
-                    "SR3-ALASSO-P": lambda lam, ell: L1LmeModelSR3(**model_parameters,
+                                                                 practical=False)
+            if "MSR3-fast" in models_to_launch:
+                models['SR3-ALASSO-P'] = lambda lam, ell: L1LmeModelSR3(**model_parameters,
                                                                    stepping="fixed",
                                                                    lam=10 ** lam,
                                                                    ell=ell,
@@ -288,25 +299,28 @@ if __name__ == "__main__":
                                                                    take_only_positive_part=args.take_only_positive_part,
                                                                    take_expected_value=args.take_expected_value,
                                                                    practical=True)
-                },
-                non_regularized_model=SimpleLMEModel(**model_parameters,
-                                                     initial_parameters={
-                                                         "beta": 1 / 2 * np.ones(args.num_covariates + 1),
-                                                         "gamma": 1 / 2 * np.ones(args.num_covariates + 1)
-                                                     },
-                                                     stepping="line-search"),
-                lambda_search_bounds=(-2, 4),
-                ell_search_grid=np.logspace(args.eta_min, args.eta_max, args.eta_num_evals),
-                true_beta=true_beta,
-                true_gamma=true_gamma,
-                problem_parameters=problem_parameters,
-                tol=np.sqrt(model_parameters["tol_solver"]),
-                dask_folder=dask_folder,
-                data_folder=data_folder
-            )
-            logs_path = logs_folder / f"{experiment}_{args.worker_number}.log"
-            logs.to_csv(logs_path)
-            print(f"{experiment} log saved to: \n {logs_path}")
+            if len(models) > 0:
+                logs = run_comparison_experiment(
+                    args=args,
+                    models=models,
+                    non_regularized_model=SimpleLMEModel(**model_parameters,
+                                                         initial_parameters={
+                                                             "beta": 1 / 2 * np.ones(args.num_covariates + 1),
+                                                             "gamma": 1 / 2 * np.ones(args.num_covariates + 1)
+                                                         },
+                                                         stepping="line-search"),
+                    lambda_search_bounds=(-2, 4),
+                    ell_search_grid=np.logspace(args.eta_min, args.eta_max, args.eta_num_evals),
+                    true_beta=true_beta,
+                    true_gamma=true_gamma,
+                    problem_parameters=problem_parameters,
+                    tol=np.sqrt(model_parameters["tol_solver"]),
+                    dask_folder=dask_folder,
+                    data_folder=data_folder
+                )
+                logs_path = logs_folder / f"{experiment}_{args.worker_number}.log"
+                logs.to_csv(logs_path)
+                print(f"{experiment} log saved to: \n {logs_path}")
 
     if "SCAD" in experiments_to_launch:
         experiment = "SCAD"
@@ -317,24 +331,25 @@ if __name__ == "__main__":
         model_parameters_copy["rho"] = 1.6
         logs = None
         if logs is None:
-            logs = run_comparison_experiment(
-                args=args,
-                models={
-                    "SCAD": lambda lam, ell: SCADLmeModel(**model_parameters_copy,
+            models = {}
+            if "PGD" in models_to_launch:
+                models['SCAD'] = lambda lam, ell: SCADLmeModel(**model_parameters_copy,
                                                           stepping="fixed",
                                                           fixed_step_len=min(args.fixed_step_size / 10 ** lam,
                                                                              args.fixed_step_size),
                                                           max_iter_solver=args.max_iter_solver_pgd,
-                                                          lam=10 ** lam),
-                    "SR3-SCAD": lambda lam, ell: SCADLmeModelSR3(**model_parameters_copy,
+                                                          lam=10 ** lam)
+            if "MSR3" in models_to_launch:
+                models['MSR3'] = lambda lam, ell: SCADLmeModelSR3(**model_parameters_copy,
                                                                  stepping="fixed",
                                                                  lam=10 ** lam,
                                                                  ell=ell,
                                                                  max_iter_solver=args.max_iter_solver_sr3,
                                                                  take_only_positive_part=args.take_only_positive_part,
                                                                  take_expected_value=args.take_expected_value,
-                                                                 practical=False),
-                    "SR3-SCAD-P": lambda lam, ell: SCADLmeModelSR3(**model_parameters_copy,
+                                                                 practical=False)
+            if "MSR3-fast" in models_to_launch:
+                models['SR3-SCAD-P'] = lambda lam, ell: SCADLmeModelSR3(**model_parameters_copy,
                                                                    stepping="fixed",
                                                                    lam=10 ** lam,
                                                                    ell=ell,
@@ -342,7 +357,10 @@ if __name__ == "__main__":
                                                                    take_only_positive_part=args.take_only_positive_part,
                                                                    take_expected_value=args.take_expected_value,
                                                                    practical=True)
-                },
+
+            logs = run_comparison_experiment(
+                args=args,
+                models=models,
                 lambda_search_bounds=(-2, 4),
                 true_beta=true_beta,
                 true_gamma=true_gamma,
