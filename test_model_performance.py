@@ -1,9 +1,11 @@
+import shutil
 import time
 from pathlib import Path
-import shutil
 
+import dask
 import numpy as np
 import pandas as pd
+from dask.distributed import Client, as_completed, TimeoutError, LocalCluster
 from matplotlib import pyplot as plt
 from pysr3.lme.problems import LMEProblem
 from sklearn.metrics import mean_squared_error, explained_variance_score, confusion_matrix
@@ -182,21 +184,28 @@ def run_comparison_experiment(args,
     try:
         if args.use_dask:
             print(f"Processing with Dask.Distributed, with {args.n_dask_workers} workers in parallel.")
-            import dask
-            from dask.distributed import Client, as_completed, TimeoutError
             Path(dask_folder).mkdir(parents=True, exist_ok=True)
-            with dask.config.set({'temporary_directory': dask_folder}):
-                with Client(threads_per_worker=1, n_workers=args.n_dask_workers) as client:
-                    for job_params in jobs:
-                        futures.append(client.submit(measure_models, *job_params))
-                    for future in tqdm(as_completed(futures)):
-                        try:
-                            results = future.result(timeout=120)
-                            all_results.append(results)
-                        except TimeoutError:
-                            continue
-            # delete temporary dask folder
-            shutil.rmtree(dask_folder)
+            try:
+                with dask.config.set({'temporary_directory': dask_folder}):
+                    with LocalCluster(threads_per_worker=1,
+                                      processes=True,
+                                      host="localhost",
+                                      dashboard_address="localhost:0",
+                                      worker_dashboard_address="localhost:0",
+                                      n_workers=args.n_dask_workers
+                                      ) as cluster, \
+                            Client(cluster) as client:
+                        for job_params in jobs:
+                            futures.append(client.submit(measure_models, *job_params))
+                        for future in tqdm(as_completed(futures)):
+                            try:
+                                results = future.result(timeout=3)
+                                all_results.append(results)
+                            except TimeoutError:
+                                continue
+            finally:
+                # delete temporary dask folder
+                shutil.rmtree(dask_folder)
         else:
             print(f"Processing in a single thread. Brace yourself, it may take a while..."
                   f" (Consider passing --use_dask for multithread execution)")
@@ -205,7 +214,7 @@ def run_comparison_experiment(args,
                 all_results.append(results)
 
     finally:
-        log = pd.DataFrame.from_records(all_results)
+        log = pd.DataFrame.from_records(all_results, columns=["trial", "ell"])
         log = log.sort_values(by=["trial", "ell"])
 
     return log

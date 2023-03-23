@@ -17,6 +17,9 @@ from alternatives.lmmlasso_wrapper import lmmlassomodel
 from test_model_performance import run_comparison_experiment
 from competitors_table import generate_competitors_table
 
+# to fix "module main have no attribute spec" when using dask with iPython after stopping the execution
+__spec__ = None
+
 parser = argparse.ArgumentParser('pysr3 experiments')
 # experiment settings
 parser.add_argument('--experiments', type=str, default="intuition,L0,L1,ALASSO,SCAD,bullying", help='Which experiments to run. List them as one string separated by commas, e.g. "L0,L1". Choices: intuition, L0, L1, ALASSO, SCAD, competitors, bullying')
@@ -95,7 +98,7 @@ true_beta = np.array([1, 0] + [1, 0] * int((args.num_covariates - 1) / 2)) * np.
 true_gamma = true_beta.copy()
 
 
-if __name__ == "__main__":
+def main():
     # Add a timestamp to the folder's name if required
     if args.add_timestamp:
         experiment_name = args.experiment_name + "_" + datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
@@ -433,3 +436,7 @@ if __name__ == "__main__":
                 "experiment_folder": experiment_folder,
                 "ic": args.information_criterion_for_model_selection
             })
+
+
+if __name__ == "__main__":
+    main()
