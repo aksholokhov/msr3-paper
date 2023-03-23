@@ -2,7 +2,7 @@
 
 #SBATCH --job-name="ps3_100"
 #SBATCH --account=amath
-#SBATCH --partition=gpu_rtx6k
+#SBATCH --partition=gpu-rtx6k
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=1
 #SBATCH --time=4-23:00:00
