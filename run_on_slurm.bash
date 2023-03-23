@@ -22,7 +22,7 @@ else
 fi
 source ~/.bashrc
 conda activate compute
-cd ~/storage/repos/skmixed-experiments/paper_sum2021
+cd ~/storage/repos/msr3-paper
 
 time python jcgf_generate_all.py \
   --experiments $experiments \
