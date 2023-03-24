@@ -8,6 +8,12 @@ In our research group we take reproducibility seriously. Please open an issue in
 
 ## Installation
 
+First, checkout this repo
+
+`git clone https://github.com/aksholokhov/msr3-paper`
+
+You'll need to open **walkthrough.ipynb** -- this jupyter notebook. 
+
 As of today, the code works with any version of python starting 3.8.11.
 
 You need to install the following packages to your python environment to run this notebook:
@@ -37,7 +43,7 @@ Now in the menu above (Kernel->Change Kernel) you should be able to change your 
 %matplotlib auto
 ```
 
-    Using matplotlib backend: <object object at 0x7fa7e2f47600>
+    Using matplotlib backend: <object object at 0x7fd134d98600>
 
 
 ## Usage
@@ -49,7 +55,7 @@ Most of the results can be replicated by running **generate_all.py** with differ
 %run generate_all.py --help
 ```
 
-    usage: pysr3 experiments [-h] [--experiments EXPERIMENTS]
+    usage: pysr3 experiments [-h] [--experiments EXPERIMENTS] [--models MODELS]
                              [--trials_from TRIALS_FROM] [--trials_to TRIALS_TO]
                              [--use_dask USE_DASK]
                              [--n_dask_workers N_DASK_WORKERS]
@@ -87,6 +93,7 @@ Most of the results can be replicated by running **generate_all.py** with differ
                             Which experiments to run. List them as one string
                             separated by commas, e.g. "L0,L1". Choices: intuition,
                             L0, L1, ALASSO, SCAD, competitors, bullying
+      --models MODELS       Which models to include to trials
       --trials_from TRIALS_FROM
                             Each "trial" represents testing all algorithms listed
                             in "experiments" (except intuition and bullying) on
@@ -207,20 +214,21 @@ The code that executes this experiment is located in **intuition.py**
 %time %run generate_all.py --experiments "intuition"
 ```
 
+    Creating a folder for the experiments' outputs: results/test_run
     This run's input parameters are saved as: 
      results/test_run/logs/experiment_inputs_1.pickle
     Generate data and fit models for the 'intuition' experiment (Figure 3)
     On a 2D sample L1 problem PGD took 1284 steps to converge and MSR3 took 18 steps to converge.
 
 
-    Evaluating value function for betas on a grid for contour plots: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████| 100/100 [04:18<00:00,  2.58s/it]
-    Evaluating value function for gammas on a grid for contour plots: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████| 100/100 [03:49<00:00,  2.30s/it]
+    Evaluating value function for betas on a grid for contour plots: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████| 100/100 [04:06<00:00,  2.47s/it]
+    Evaluating value function for gammas on a grid for contour plots: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████| 100/100 [03:30<00:00,  2.11s/it]
 
 
     Intuition data saved as results/test_run/logs/log_intuition.pickle
     Intuition figure (Figure 2) saved as results/test_run/figures/intuition.jpg
-    CPU times: user 8min 15s, sys: 2.68 s, total: 8min 18s
-    Wall time: 8min 19s
+    CPU times: user 7min 46s, sys: 714 ms, total: 7min 47s
+    Wall time: 7min 47s
 
 
 This is what I got:
@@ -248,6 +256,7 @@ Thus, your options are:
 %time %run generate_all.py --experiments "L0,L1,ALASSO,SCAD" --trials_from 1 --trials_to 2 
 ```
 
+    Creating a folder for the experiments' outputs: results/test_run
     This run's input parameters are saved as: 
      results/test_run/logs/experiment_inputs_1.pickle
     
@@ -256,7 +265,7 @@ Thus, your options are:
     Processing with Dask.Distributed, with 15 workers in parallel.
 
 
-    21it [1:02:40, 179.09s/it]
+    21it [59:11, 169.14s/it]
 
 
     L0 log saved to: 
@@ -267,7 +276,7 @@ Thus, your options are:
     Processing with Dask.Distributed, with 15 workers in parallel.
 
 
-    21it [09:10, 26.20s/it]
+    21it [06:39, 19.03s/it]
 
 
     L1 log saved to: 
@@ -278,7 +287,7 @@ Thus, your options are:
     Processing with Dask.Distributed, with 15 workers in parallel.
 
 
-    21it [35:34, 101.64s/it]
+    21it [25:15, 72.18s/it] 
 
 
     ALASSO log saved to: 
@@ -289,14 +298,33 @@ Thus, your options are:
     Processing with Dask.Distributed, with 15 workers in parallel.
 
 
-    21it [2:25:31, 415.77s/it] 
-    2023-03-21 21:46:14,885 - distributed.nanny - WARNING - Worker process still alive after 3.9999969482421878 seconds, killing
+    21it [38:33, 110.19s/it]
 
 
     SCAD log saved to: 
      results/test_run/logs/SCAD_1.log
-    CPU times: user 15min 34s, sys: 6min 11s, total: 21min 46s
-    Wall time: 4h 13min 37s
+
+
+    /Users/aksh/Storage/repos/msr3-paper/comparison_table.py:164: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      plots_data = plots_data.append(mean_df)
+    /Users/aksh/Storage/repos/msr3-paper/comparison_table.py:164: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      plots_data = plots_data.append(mean_df)
+    /Users/aksh/Storage/repos/msr3-paper/comparison_table.py:164: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      plots_data = plots_data.append(mean_df)
+    /Users/aksh/Storage/repos/msr3-paper/comparison_table.py:164: FutureWarning: The frame.append method is deprecated and will be removed from pandas in a future version. Use pandas.concat instead.
+      plots_data = plots_data.append(mean_df)
+
+
+    CPU times: user 9min 24s, sys: 3min 46s, total: 13min 10s
+    Wall time: 10h 49s
+
+
+    /Users/aksh/Storage/repos/msr3-paper/comparison_table.py:244: FutureWarning: In future versions `DataFrame.to_latex` is expected to utilise the base implementation of `Styler.to_latex` for formatting and rendering. The arguments signature may therefore change. It is recommended instead to use `DataFrame.style.to_latex` which also contains additional functionality.
+      table_short.to_latex(experiment_folder / "tables" / f"performance_table_short.tex", escape=False)
+    /Users/aksh/Storage/repos/msr3-paper/comparison_table.py:245: FutureWarning: In future versions `DataFrame.to_latex` is expected to utilise the base implementation of `Styler.to_latex` for formatting and rendering. The arguments signature may therefore change. It is recommended instead to use `DataFrame.style.to_latex` which also contains additional functionality.
+      table_short[['PGD', 'MSR3-fast']].to_latex(experiment_folder / "tables" / f"performance_table_short_wo_msr3.tex",
+    /Users/aksh/Storage/repos/msr3-paper/comparison_table.py:248: FutureWarning: In future versions `DataFrame.to_latex` is expected to utilise the base implementation of `Styler.to_latex` for formatting and rendering. The arguments signature may therefore change. It is recommended instead to use `DataFrame.style.to_latex` which also contains additional functionality.
+      table_long.to_latex(experiment_folder / "tables" / f"performance_table_long.tex")
 
 
 Here is what I got for just one problem:
@@ -338,22 +366,6 @@ pd.read_csv('results/test_run/tables/performance_table_short.csv')
   <tbody>
     <tr>
       <th>0</th>
-      <td>ALASSO</td>
-      <td>Accuracy</td>
-      <td>0.95</td>
-      <td>0.95</td>
-      <td>0.95</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>ALASSO</td>
-      <td>Time</td>
-      <td>48.28</td>
-      <td>81.43</td>
-      <td>1.57</td>
-    </tr>
-    <tr>
-      <th>2</th>
       <td>L0</td>
       <td>Accuracy</td>
       <td>0.90</td>
@@ -361,12 +373,28 @@ pd.read_csv('results/test_run/tables/performance_table_short.csv')
       <td>0.95</td>
     </tr>
     <tr>
-      <th>3</th>
+      <th>1</th>
       <td>L0</td>
       <td>Time</td>
-      <td>23.11</td>
-      <td>110.28</td>
-      <td>0.45</td>
+      <td>23.18</td>
+      <td>109.44</td>
+      <td>0.56</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>SCAD</td>
+      <td>Accuracy</td>
+      <td>0.80</td>
+      <td>0.95</td>
+      <td>0.95</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>SCAD</td>
+      <td>Time</td>
+      <td>50.17</td>
+      <td>9.43</td>
+      <td>0.75</td>
     </tr>
     <tr>
       <th>4</th>
@@ -380,25 +408,25 @@ pd.read_csv('results/test_run/tables/performance_table_short.csv')
       <th>5</th>
       <td>L1</td>
       <td>Time</td>
-      <td>22.05</td>
-      <td>15.86</td>
-      <td>0.49</td>
+      <td>17.37</td>
+      <td>10.34</td>
+      <td>0.51</td>
     </tr>
     <tr>
       <th>6</th>
-      <td>SCAD</td>
+      <td>ALASSO</td>
       <td>Accuracy</td>
-      <td>0.80</td>
+      <td>0.95</td>
       <td>0.95</td>
       <td>0.95</td>
     </tr>
     <tr>
       <th>7</th>
-      <td>SCAD</td>
+      <td>ALASSO</td>
       <td>Time</td>
-      <td>73.48</td>
-      <td>10.40</td>
-      <td>0.80</td>
+      <td>28.02</td>
+      <td>77.06</td>
+      <td>0.85</td>
     </tr>
   </tbody>
 </table>
@@ -424,19 +452,20 @@ The experiment runs quickly on a single-core machine. This is how you run it:
 %time %run generate_all.py --experiments "bullying"
 ```
 
+    Creating a folder for the experiments' outputs: results/test_run
     This run's input parameters are saved as: 
      results/test_run/logs/experiment_inputs_1.pickle
     Run a feature-selection experiment on real-world data from the Bullying study. (Figure 6)
 
 
-    100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 12/12 [00:00<00:00, 15.07it/s]
+    100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 12/12 [00:00<00:00, 14.75it/s]
 
 
     Random feature selection saved as as results/test_run/figures/bullying_data_random_feature_selection.jpg
     Random feature selection saved as as results/test_run/figures/bullying_data_random_feature_selection.jpg
     Assessment saved as as results/test_run/figures/bullying_data_assessment_selection.jpg
-    CPU times: user 7.79 s, sys: 163 ms, total: 7.96 s
-    Wall time: 7.96 s
+    CPU times: user 8.22 s, sys: 79.5 ms, total: 8.3 s
+    Wall time: 8.29 s
 
 
 Here is what I got:
@@ -465,24 +494,19 @@ Here is how you can launch it:
 
 
 ```python
-%time %run generate_all.py --experiments "competitors" --trials_from 1 --trials_to 2 --no_dask True
+%time %run generate_all.py --experiments "competitors" --trials_from 1 --trials_to 2 --use_dask 0
 ```
 
+    Creating a folder for the experiments' outputs: results/test_run
     This run's input parameters are saved as: 
      results/test_run/logs/experiment_inputs_1.pickle
     
      Run experiment for alternative libraries on L1 tasks (Table 3). Problems to solve [1, 2)
     Jobs to process: 12
-    Processing with Dask.Distributed, with 15 workers in parallel.
+    Processing in a single thread. Brace yourself, it may take a while... (Consider passing --use_dask for multithread execution)
 
 
-    0it [00:00, ?it/s]/Users/aksh/.conda/envs/msr3-paper/lib/python3.8/site-packages/rpy2/rinterface.py:1110: UserWarning: R is not initialized by the main thread.
-                    Its taking over SIGINT cannot be reversed here, and as a
-                    consequence the embedded R cannot be interrupted with Ctrl-C.
-                    Consider (re)setting the signal handler of your choice from
-                    the main thread.
-      warnings.warn(
-    R[write to console]: Loading required package: emulator
+     92%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████▎              | 11/12 [00:36<00:06,  6.40s/it]R[write to console]: Loading required package: emulator
     
     R[write to console]: Loading required package: mvtnorm
     
@@ -494,20 +518,13 @@ Here is how you can launch it:
     
     R[write to console]: Welcome to penalized. For extended examples, see vignette("penalized").
     
-    1it [00:02,  2.47s/it]
+
 
     ----------------------------------------------------------------------
     This is a test release of the package 'lmmlasso'. If you have any questions or problems, do not hesitate to contact the author.
     ----------------------------------------------------------------------
-
-
-    10it [00:04,  3.88it/s]
-
     Redundant covariance parameters. 
-
-
-    11it [00:13,  2.71s/it]
-
+    Redundant covariance parameters. 
     Redundant covariance parameters. 
     Redundant covariance parameters. 
     Redundant covariance parameters. 
@@ -524,33 +541,16 @@ Here is how you can launch it:
     Redundant covariance parameters. 
 
 
-    12it [01:41,  8.44s/it]
-
-    Redundant covariance parameters. 
-
-
-    
-    /Users/aksh/.conda/envs/msr3-paper/lib/python3.8/site-packages/rpy2/rinterface.py:1110: UserWarning: R is not initialized by the main thread.
-                    Its taking over SIGINT cannot be reversed here, and as a
-                    consequence the embedded R cannot be interrupted with Ctrl-C.
-                    Consider (re)setting the signal handler of your choice from
-                    the main thread.
-      warnings.warn(
-    R[write to console]: There were 50 or more warnings (use warnings() to see the first 50)
-    R[write to console]: There were 16 warnings (use warnings() to see them)
-    R[write to console]: 
-    
-    R[write to console]: 
-    
-
+    100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 12/12 [02:13<00:00, 11.13s/it]
 
     Measurements for competitors are saved to: 
      results/test_run/logs/competitors_1.log
     The table with performance comparison for alternative libraries was saved to:results/test_run/tables/competitors_table_long.tex
-    CPU times: user 10.4 s, sys: 3.77 s, total: 14.1 s
-    Wall time: 1min 52s
+    CPU times: user 4min 54s, sys: 6.77 s, total: 5min 1s
+    Wall time: 2min 13s
 
 
+    
     /Users/aksh/Storage/repos/msr3-paper/competitors_table.py:79: FutureWarning: In future versions `DataFrame.to_latex` is expected to utilise the base implementation of `Styler.to_latex` for formatting and rendering. The arguments signature may therefore change. It is recommended instead to use `DataFrame.style.to_latex` which also contains additional functionality.
       table_long.to_latex(tables_folder / f"competitors_table_long.tex")
 
@@ -637,9 +637,9 @@ alternatives
     <tr>
       <th>6</th>
       <td>Time</td>
-      <td>0.18 (0.18-0.18)</td>
-      <td>0.57 (0.57-0.57)</td>
-      <td>6.09 (6.09-6.09)</td>
+      <td>0.14 (0.14-0.14)</td>
+      <td>0.55 (0.55-0.55)</td>
+      <td>6.13 (6.13-6.13)</td>
     </tr>
     <tr>
       <th>7</th>
