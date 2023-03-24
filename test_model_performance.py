@@ -214,8 +214,9 @@ def run_comparison_experiment(args,
                 all_results.append(results)
 
     finally:
-        log = pd.DataFrame.from_records(all_results, columns=["trial", "ell"])
-        log = log.sort_values(by=["trial", "ell"])
+        log = pd.DataFrame.from_records(all_results)
+        if len(log) > 0:
+            log = log.sort_values(by=["trial", "ell"])
 
     return log
 
