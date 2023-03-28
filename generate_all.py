@@ -22,7 +22,7 @@ __spec__ = None
 
 parser = argparse.ArgumentParser('pysr3 experiments')
 # experiment settings
-parser.add_argument('--experiments', type=str, default="intuition,L0,L1,ALASSO,SCAD,bullying", help='Which experiments to run. List them as one string separated by commas, e.g. "L0,L1". Choices: intuition, L0, L1, ALASSO, SCAD, competitors, bullying')
+parser.add_argument('--experiments', type=str, default="intuition", help='Which experiments to run. List them as one string separated by commas, e.g. "L0,L1". Choices: intuition, L0, L1, ALASSO, SCAD, competitors, bullying')
 parser.add_argument('--models', type=str, default='PGD,MSR3,MSR3-fast', help="Which models to include to trials")
 parser.add_argument('--trials_from', type=int, default=1, help='Each "trial" represents testing all algorithms listed in "experiments" (except intuition and bullying) on one synthetic problem. This parameter and trials_to define bounds. E.g. trials_from=1 (inclusive) and trials_to=5 (exclusive) means that all algorithms will be tested on 4 problems.')
 parser.add_argument('--trials_to', type=int, default=2, help='Each "trial" represents testing all algorithms listed in "experiments" (except intuition and bullying) on one synthetic problem. This parameter and trials_to define bounds. E.g. trials_from=1 (inclusive) and trials_to=5 (exclusive) means that all algorithms will be tested on 4 problems.')
