@@ -5,8 +5,8 @@
 #SBATCH --partition=ckpt
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=1
-#SBATCH --time=4:00:00
-#SBATCH --array=1-1400
+#SBATCH --time=3:55:00
+#SBATCH --array=1-1400%100
 #SBATCH --output=logs/slurm_scaling/%A_%a.out
 #SBATCH --mem=8G
 
