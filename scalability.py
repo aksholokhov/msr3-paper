@@ -88,14 +88,14 @@ if __name__ == "__main__":
                                           y_pred=abs(maybe_gamma) > np.sqrt(best_model.tol_solver)
                                           ).ravel()
     logs = {
-        "algo": args.algo,
+        "algo": algo,
         "ftn": ftn,
         "ffp": ffp,
         "ffn": ffn,
         "ftp": ftp,
         "time": end - start
     }
-    with open(logs_folder / "log.pickle", "wb") as f:
+    with open(logs_folder / f"log_{args.trial}.pickle", "wb") as f:
         pickle.dump(logs, f)
 
 
