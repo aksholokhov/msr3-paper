@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser('scalability')
 parser.add_argument('--trial', type=int, default=1, help='Each "trial" represents one experiment')
 parser.add_argument('--base_folder', type=str, default=".", help='Path to the base folder (where this file is).')
 parser.add_argument('--seed', type=int, default=42, help='Random seed')
-parser.add_argument('--experiment_name', type=str, default="scalability", help='Experiment name')
+parser.add_argument('--experiment_name', type=str, default="scaling", help='Experiment name')
 args = parser.parse_args()
 
 base_folder = Path(args.base_folder)
