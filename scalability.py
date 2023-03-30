@@ -24,10 +24,14 @@ base_folder = Path(args.base_folder)
 problem_multipliers = [1, 2, 5, 10, 20, 50, 100]
 
 if __name__ == "__main__":
-    if args.trial > 700:
+    if args.trial < 700:
+        algo = "msr3-fast"
+    elif 700 <= args.trial < 1400:
+        algo = "pgd"
+    elif 1400 <= args.trial < 2100:
         algo = "pgd_fixed"
     else:
-        algo = "msr3-fast"
+        raise ValueError(f"Unknown trial num")
 
     trial = (args.trial % 700) % 100
     multiplier = problem_multipliers[(args.trial % 700) // 100]
@@ -66,6 +70,8 @@ if __name__ == "__main__":
     # See the glossary of models for more details.
     if algo == "msr3-fast":
         model = L1LmeModelSR3(practical=True, tol_solver=1e-4 * multiplier, tol_oracle=1e-5 * multiplier, ell=20, lam=1e-3)
+    elif algo == "pgd":
+        model = L1LmeModel(tol_solver=1e-4 * multiplier, lam=1, stepping='line-search')
     elif algo == "pgd_fixed":
         model = L1LmeModel(tol_solver=1e-4 * multiplier, lam=1, stepping='fixed', fixed_step_len=1e-3)
     else:
