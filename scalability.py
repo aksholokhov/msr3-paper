@@ -131,13 +131,27 @@ if __name__ == "__main__":
 def process_results(logs_folder: Path):
     logs = []
     for file in logs_folder.iterdir():
-        trial_num = file.name.split(".")[0].split("_")[1]
+        trial_num = int(file.name.split(".")[0].split("_")[1])
         with open(file, 'rb') as f:
-            logs.append({"trial": int(trial_num), **pickle.load(f)})
+            record = {"trial": trial_num, **pickle.load(f)}
+            if record['algo'] == "MSR3-Fast":
+                record['eta'] = possible_etas[(trial_num % 1000) // 100]
+            else:
+                record['eta'] = 0
+            logs.append(record)
     data = pd.DataFrame.from_records(logs).sort_values(by='trial')
     data['n_features'] = data['ftn'] + data['ffp'] + data['ffn'] + data['ftp']
     data['accuracy'] = (data["ftp"] + data["ftn"]) / (data['n_features'])
-    data['time'] = data['time'].round(2)
+    data['time'] = data['time'].round(2) * args.n_gridsearch_lambda # include gridsearch in time
+    data.rename(inplace=True, columns={"algo": "Algorithm", "n_features": "Number of Features", "eta": "$\eta$"})
 
-    groups = data[['algo', 'n_features', 'time']].pivot_table(index='n_features', columns='algo', values='time')
+    groups_time = data[['Algorithm', "$\eta$", 'Number of Features', 'time']].pivot_table(index='Number of Features', columns=['Algorithm', "$\eta$"], values='time', aggfunc='mean').astype(int)
+    groups_time = groups_time.applymap(lambda sec: f"{sec//60}m {sec%60}s")
+    groups_acc = data[['Algorithm', "$\eta$", 'Number of Features', 'accuracy']].pivot_table(index='Number of Features', columns=['Algorithm', "$\eta$"],
+                                                                          values='accuracy', aggfunc='mean').round(2)
+    groups_acc.to_latex(logs_folder.parent / "scaling_acc.tex")
+    groups_time.to_latex(logs_folder.parent / "scaling_time.tex")
     pass
+
+# if __name__ == "__main__":
+#     process_results(Path("results/scaling_jones/logs"))
