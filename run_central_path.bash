@@ -15,6 +15,6 @@ source ~/.bashrc
 conda activate compute
 cd ~/storage/repos/msr3-paper
 
-time python central_path.py  --trial ${SLURM_ARRAY_TASK_ID} --ic $ic --experiment_name "central_path_{$ic}"
+time python central_path.py  --trial ${SLURM_ARRAY_TASK_ID} --ic $ic --experiment_name "central_path_$ic"
 
 

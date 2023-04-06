@@ -15,6 +15,6 @@ source ~/.bashrc
 conda activate compute
 cd ~/storage/repos/msr3-paper
 
-time python scalability.py  --trial ${SLURM_ARRAY_TASK_ID} --ic $ic --experiment_name "scaling_{$ic}"
+time python scalability.py  --trial ${SLURM_ARRAY_TASK_ID} --ic $ic --experiment_name "scaling_$ic"
 
 
