@@ -14,7 +14,7 @@ from pysr3.lme.models import L1LmeModelSR3, L1LmeModel
 import time
 
 parser = argparse.ArgumentParser('central_path')
-parser.add_argument('--trial', type=int, default=1835, help='Each "trial" represents one experiment')
+parser.add_argument('--trial', type=int, default=2322, help='Each "trial" represents one experiment')
 parser.add_argument('--base_folder', type=str, default=".", help='Path to the base folder (where this file is).')
 parser.add_argument('--seed', type=int, default=42, help='Random seed')
 parser.add_argument('--experiment_name', type=str, default="central_path", help='Experiment name')
@@ -37,7 +37,7 @@ if __name__ == "__main__":
         algo = "MSR3-Fast"
         model = L1LmeModelSR3(practical=True, tol_solver=1e-4 * multiplier,
                               tol_oracle=1e-5 * multiplier, ell=eta, central_path_neighbourhood_target=tau)
-    elif 2000 <= (args.trial % 1000) < 4000:
+    elif 2000 <= args.trial < 4000:
         algo = "MSR3"
         model = L1LmeModelSR3(tol_solver=1e-4 * multiplier, tol_oracle=1e-5 * multiplier, ell=eta,
                               central_path_neighbourhood_target=tau)
