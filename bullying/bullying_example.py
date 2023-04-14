@@ -105,7 +105,7 @@ def generate_bullying_experiment(dataset_path, figures_directory):
     inclusion_betas_plot = figure2.add_subplot(grid2[0, :])
     inclusion_gammas_plot = figure2.add_subplot(grid2[1, :])
 
-    figure3 = plt.figure(figsize=(16, 5))
+    figure3 = plt.figure(figsize=(21, 5))
     grid3 = plt.GridSpec(nrows=1, ncols=2)
     beta_coefs_plot = figure3.add_subplot(grid3[:, 0])
     beta_assessment_plot = figure3.add_subplot(grid3[:, 1])
@@ -183,7 +183,7 @@ def generate_bullying_experiment(dataset_path, figures_directory):
     loss_plot.set_xticks(nnz_tbetas)
 
     selection_aics = np.array(selection_aics[::-1])
-    argmin_aic = np.argmin(selection_aics[:-1])
+    argmin_aic = np.argmin(selection_aics)
     aics_plot.plot(nnz_tbetas, selection_aics, label="AIC (R2)")
     aics_plot.scatter(nnz_tbetas[argmin_aic], selection_aics[argmin_aic], s=80, facecolors='none', edgecolors='r')
     aics_plot.set_xlabel(r"$\|\beta\|_0$ -- number of NNZ coefficients")
@@ -250,7 +250,7 @@ def generate_bullying_experiment(dataset_path, figures_directory):
     beta_coefs_plot.set_ylabel("Values of the model coefficients")
 
     beta_assessment_plot.set_yticks(range(len(beta_features_labels)))
-    beta_assessment_plot.set_yticklabels(beta_features_labels)
+    beta_assessment_plot.set_yticklabels(beta_features_labels, fontsize=12)
     beta_historic_significance = np.array([bool(historic_significance[feature]) for feature in beta_features_labels])
     accuracies = []
     for j in range(len(nnz_tbetas)):
@@ -261,18 +261,19 @@ def generate_bullying_experiment(dataset_path, figures_directory):
         accuracies.append((tp+tn)/(tp+tn+fp+fn))
 
     beta_assessment_plot.set_xticks(nnz_tbetas)
-    beta_assessment_plot.set_xticklabels([f'{a}\n\n{b:.2f}' for a, b in zip(nnz_tbetas, accuracies)])
+    beta_assessment_plot.set_xticklabels([f'{a}\n\n{b:.2f}' for a, b in zip(nnz_tbetas, accuracies)], fontsize=12)
     beta_assessment_plot.set_aspect('auto', adjustable='box')
-    beta_assessment_plot.text(-2.0, -1.26, "NNZ Covariates")
-    beta_assessment_plot.text(-.68, -2.23, "Accuracy")
+    beta_assessment_plot.text(-1.54, -1.26, "NNZ Covariates", fontsize=12)
+    beta_assessment_plot.text(-.35, -2.46, "Accuracy", fontsize=12)
     from matplotlib.patches import FancyBboxPatch, Patch
-    rect = FancyBboxPatch((8.75, -.20), 0.5, 12.25, boxstyle="Round", linewidth=1, edgecolor='orange', facecolor='none')
+    rect = FancyBboxPatch((argmin_aic + 2 - 0.25, -.20), 0.5, 12.25, boxstyle="Round", linewidth=1, edgecolor='orange', facecolor='none')
     beta_assessment_plot.add_patch(rect)
     handles, labels = beta_assessment_plot.get_legend_handles_labels()
-    beta_assessment_plot.legend(handles + [Patch(facecolor='none', edgecolor='orange')], labels + ["Chosen by BIC"], bbox_to_anchor=(1.4, 1.0), loc='upper right')
+    beta_assessment_plot.legend(handles + [Patch(facecolor='none', edgecolor='orange')], labels + ["Chosen by BIC"], bbox_to_anchor=(1.38, 1.0), loc='upper right', fontsize=12)
 
     figure3.tight_layout()
     figure3.savefig(figures_directory / f"{dataset_path.stem}_assessment_selection.jpg")
+    plt.show()
     print(
         f'Assessment saved as as {figures_directory / f"{dataset_path.stem}_assessment_selection.jpg"}')
     plt.close()
@@ -289,13 +290,13 @@ def plot_selection(ax, x, y_true, y_pred, add_labels=True):
                 enumerate(true_pos)], s=80, facecolors='none', edgecolors='g', label="True Positive" if add_labels else None)
     ax.scatter([x] * len(y_true),
                [None if t == False else i for i, t in
-                enumerate(false_pos)], s=80, facecolors='none', edgecolors='r', label="False Positive" if add_labels else None)
+                enumerate(false_pos)], s=80, facecolors='r', edgecolors='r', label="False Positive" if add_labels else None)
     ax.scatter([x] * len(y_true),
                [None if t == False else i for i, t in
                 enumerate(true_neg)], marker='X', s=80, facecolors='none', edgecolors='g', label="True Negative" if add_labels else None)
     ax.scatter([x] * len(y_true),
                [None if t == False else i for i, t in
-                enumerate(false_neg)], marker='X', s=80, facecolors='none', edgecolors='r', label="False Negative" if add_labels else None)
+                enumerate(false_neg)], marker='X', s=80, facecolors='r', edgecolors='r', label="False Negative" if add_labels else None)
     ax.legend()
     return sum(true_pos), sum(true_neg), sum(false_pos), sum(false_neg)
 
