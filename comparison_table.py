@@ -11,7 +11,7 @@ import argparse
 
 parser = argparse.ArgumentParser('pysr3 experiments')
 # experiment settings
-parser.add_argument('--experiments', type=tuple, default=("L1",))
+parser.add_argument('--experiments', type=tuple, default=("L0", "L1", "ALASSO", "SCAD"))
 # 5457071 -> went to JCGS
 # eta_dynamics -> went to JCGS (eta plot)
 parser.add_argument('--experiment_folder', type=str, default="results/5457071")
@@ -83,7 +83,7 @@ def generate_benchmark_table(args):
             plt.legend(fontsize=12)
             plt.xlim(1e-3, 1e2)
             (experiment_folder / "figures" ).mkdir(parents=True, exist_ok=True)
-            plt.savefig(experiment_folder / "figures" / f"eta_dependence.pdf")
+            plt.savefig(experiment_folder / "figures" / f"eta_dependence.jpg")
             plt.show()
 
         f1_scores_pgd = []
