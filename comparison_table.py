@@ -11,9 +11,10 @@ import argparse
 
 parser = argparse.ArgumentParser('pysr3 experiments')
 # experiment settings
-parser.add_argument('--experiments', type=tuple, default=("L0", "L1", "ALASSO", "SCAD"))
+parser.add_argument('--experiments', type=tuple, default=("L1",))
 # 5457071 -> went to JCGS
-parser.add_argument('--experiment_folder', type=str, default="results/local_debug_2023-03-20_15:09:35")
+# eta_dynamics -> went to JCGS (eta plot)
+parser.add_argument('--experiment_folder', type=str, default="results/5457071")
 parser.add_argument('--ic', type=str, default="jones")
 parser.add_argument('--plot_etas_experiment', type=bool, default=True)  # true for eta_dynamics
 
@@ -61,6 +62,7 @@ def generate_benchmark_table(args):
 
         if name == "L1":
             y_axis = "acc"
+            plt.figure(figsize=(6, 5))
             for trial in [1, ]:
                 trial_data = data[(data['trial'] == trial) & (data['model'] == f"SR3-{name}")]
                 plt.semilogx(trial_data["ell"], trial_data[y_axis], 'b', label="MSR3 L1")
@@ -69,15 +71,19 @@ def generate_benchmark_table(args):
             # The first limits are for the "extended range" picture, where eta goes from 1e-4 to 1e2
             # The second limits are for the "normal range" picture, where eta goes from 1e-2 to 1e1
             #plt.text(x=1e-3, y=0.75, s="Loose")
-            plt.text(x=1e-2, y=0.75, s="Loose")
-            plt.text(x=5e-1, y=0.75, s="Optimal")
+            plt.text(x=1e-2, y=0.75, s="Loose", fontsize=12)
+            plt.text(x=5e-1, y=0.75, s="Optimal", fontsize=12)
             #plt.text(x=3e1, y=0.75, s="Tight")
-            plt.text(x=8, y=0.75, s="Tight")
-            plt.title(r"Sensitivity of MSR3 to the relaxation parameter $\eta$")
-            plt.xlabel(r"$\eta$, MSR3 relaxation parameter")
-            plt.ylabel("Accuracy of fixed and random effects identification")
-            plt.legend()
-            plt.savefig(experiment_folder / "figures" / f"eta_dependence.jpg")
+            plt.text(x=12, y=0.75, s="Tight", fontsize=12)
+            plt.title(r"Sensitivity of MSR3 to the relaxation parameter $\eta$", fontsize=12)
+            plt.xlabel(r"$\eta$, MSR3 relaxation parameter", fontsize=12)
+            plt.ylabel("Accuracy of features identification", fontsize=12)
+            plt.xticks(fontsize=12)
+            plt.yticks(fontsize=12)
+            plt.legend(fontsize=12)
+            plt.xlim(1e-3, 1e2)
+            (experiment_folder / "figures" ).mkdir(parents=True, exist_ok=True)
+            plt.savefig(experiment_folder / "figures" / f"eta_dependence.pdf")
             plt.show()
 
         f1_scores_pgd = []
@@ -205,15 +211,28 @@ def generate_benchmark_table(args):
     plots_data["Time"] = plots_data["Time"].astype(float)
 
     # Generate plots
-    fig, ax = plt.subplots(nrows=1, ncols=2)
-    fig.set_size_inches(14, 4)
-    sns.boxplot(x="Regularizer", y="Accuracy", hue="Model", data=plots_data, palette="Set3", width=0.5, ax=ax[0])
-    sns.boxplot(x="Regularizer", y="Time", hue="Model", data=plots_data, palette="Set3", width=0.5, ax=ax[1])
+    fig = plt.figure(figsize=(8, 6))
+    grid = plt.GridSpec(2, 1, wspace=0.2, hspace=0.3)
+    ax = [plt.subplot(grid[0, 0]), plt.subplot(grid[1, 0])]
+    fig.set_size_inches(9, 6)
+    #sns.set(font_scale=1.2)
+    sns.boxplot(x="Regularizer", y="Accuracy", hue="Model", data=plots_data, palette="inferno", width=0.5, ax=ax[0])
+    sns.boxplot(x="Regularizer", y="Time", hue="Model", data=plots_data, palette="inferno", width=0.5, ax=ax[1])
     ax[1].set_yscale("log")
-    ax[0].legend(loc='upper right', bbox_to_anchor=(-0.08, 1.02),
-                 ncol=1, fancybox=True)
-    ax[1].legend(loc='upper left', bbox_to_anchor=(1.03, 1.02),
-                 ncol=1, fancybox=True)
+    ax[0].legend(loc='upper center', ncol=3, fancybox=True, fontsize=12, bbox_to_anchor=(0.5, 1.2))
+    ax[0].set_xticklabels(ax[0].get_xticklabels(), fontsize=12)
+    ax[0].set_yticklabels(ax[1].get_yticklabels(), fontsize=12)
+    ax[0].set_xlabel("Regularizer", fontsize=12)
+    ax[0].set_ylabel("Accuracy", fontsize=12)
+    # ax[1].legend(loc='upper right', bbox_to_anchor=(1.25, 1.),
+    #              ncol=1, fancybox=True, fontsize=12)
+    ax[1].get_legend().remove()
+    ax[1].set_xticklabels(ax[1].get_xticklabels(), fontsize=12)
+    ax[1].set_yticklabels(ax[1].get_yticklabels(), fontsize=12)
+    ax[1].set_xlabel("Regularizer", fontsize=12)
+    ax[1].set_ylabel("Time", fontsize=12)
+
+    plt.yticks(fontsize=12)
     plt.savefig(experiment_folder / "figures" / "benchmark.jpg")
     plt.show()
 
@@ -250,4 +269,4 @@ def generate_benchmark_table(args):
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    generate_benchmark_table(args=args)
+    generate_benchmark_table(args=vars(args))
