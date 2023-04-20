@@ -212,7 +212,7 @@ def generate_benchmark_table(args):
 
     # Generate plots
     fig = plt.figure(figsize=(8, 6))
-    grid = plt.GridSpec(2, 1, wspace=0.2, hspace=0.3)
+    grid = plt.GridSpec(nrows=2, ncols=1, wspace=0.2, hspace=0.3)
     ax = [plt.subplot(grid[0, 0]), plt.subplot(grid[1, 0])]
     fig.set_size_inches(9, 6)
     #sns.set(font_scale=1.2)
@@ -221,7 +221,7 @@ def generate_benchmark_table(args):
     ax[1].set_yscale("log")
     ax[0].legend(loc='upper center', ncol=3, fancybox=True, fontsize=12, bbox_to_anchor=(0.5, 1.2))
     ax[0].set_xticklabels(ax[0].get_xticklabels(), fontsize=12)
-    ax[0].set_yticklabels(ax[1].get_yticklabels(), fontsize=12)
+    ax[0].set_yticklabels(ax[0].get_yticklabels(), fontsize=12)
     ax[0].set_xlabel("Regularizer", fontsize=12)
     ax[0].set_ylabel("Accuracy", fontsize=12)
     # ax[1].legend(loc='upper right', bbox_to_anchor=(1.25, 1.),
