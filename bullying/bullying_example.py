@@ -10,7 +10,7 @@ import seaborn as sns
 
 from pysr3.lme.problems import LMEProblem
 from pysr3.lme.oracles import LinearLMEOracle, LinearLMEOracleSR3
-from pysr3.lme.models import SimpleLMEModel, L0LmeModel, L0LmeModelSR3
+from pysr3.lme.models import SimpleLMEModel, L0LmeModel, L0LmeModelSR3, L1LmeModelSR3, SCADLmeModelSR3
 
 # np.seterr(all='raise', invalid='raise')
 
@@ -119,34 +119,96 @@ def generate_bullying_experiment(dataset_path, figures_directory):
                                         not_regularized_fe=["intercept", "time"],
                                         not_regularized_re=["intercept"],
                                         )
+    ## DF:
+    # idx, reg, sparsity, ell, feature1, ..., featureN, ic1, ..., icn, loss,
 
     tbetas = np.zeros((problem.num_fixed_features - 1, problem.num_fixed_features))
     tgammas = np.zeros((problem.num_random_features - 0, problem.num_random_features))
     losses = []
     selection_aics = []
+    records = []
+    all_predictions = data.copy()
 
     tol = 1e-4
-    for nnz_tbeta in tqdm(range(len(categorical_features_columns) + 2, 1, -1)):
-        nnz_tgamma = nnz_tbeta - 1
-        model = L0LmeModelSR3(nnz_tbeta=nnz_tbeta,
-                              nnz_tgamma=nnz_tgamma,
-                              max_iter_solver=30000,  # 2000
-                              max_iter_oracle=10000,  # 20
-                              ell=50,  # 1000 # 50 was good
-                              initializer="None",  # EM
-                              tol_solver=tol,
-                              tol_oracle=1e-5,
-                              practical=True
-                              )
-        model.fit_problem(problem)
+    idx = 0
+    ell = 50
+    models_and_grids = [
+        ("L0", lambda nnz_tbeta: L0LmeModelSR3(nnz_tbeta=nnz_tbeta,
+                                         nnz_tgamma=nnz_tbeta - 1,
+                                         max_iter_solver=30000,  # 2000
+                                         max_iter_oracle=10000,  # 20
+                                         ell=ell,  # 1000 # 50 was good
+                                         initializer="None",  # EM
+                                         tol_solver=tol,
+                                         tol_oracle=1e-5,
+                                         practical=True
+                                         ),
+         range(len(categorical_features_columns) + 2, 1, -1)
+         ),
+        ("L1", lambda lam: L1LmeModelSR3(stepping="fixed",
+                                   lam=lam,
+                                   ell=ell,
+                                   max_iter_solver=30000,
+                                   max_iter_oracle=10000,
+                                   take_only_positive_part=True,
+                                   take_expected_value=False,
+                                   tol_solver=tol,
+                                   tol_oracle=1e-5,
+                                   practical=True),
+         np.logspace(-4, 2, 20)
+         ),
+        ("SCAD", lambda lam: SCADLmeModelSR3(stepping="fixed",
+                                   lam=lam,
+                                   ell=ell,
+                                   max_iter_solver=30000,
+                                   max_iter_oracle=10000,
+                                   take_only_positive_part=True,
+                                   take_expected_value=False,
+                                   tol_solver=tol,
+                                   tol_oracle=1e-5,
+                                   practical=True),
+         np.logspace(-4, 2, 20),
+         ),
+         ("No Regularizer", lambda _: SimpleLMEModel(),
+          [None]
+          )
+    ]
 
-        tbetas[nnz_tbeta - 2, :] = model.coef_["beta"]
-        tgammas[nnz_tgamma - 1, :] = model.coef_["gamma"]
-        oracle = LinearLMEOracle(problem)
-        losses.append(oracle.loss(beta=model.coef_["beta"],
-                                  gamma=model.coef_["gamma"]))
-        selection_aics.append(oracle.jones2010bic(beta=model.coef_["beta"],
-                                                  gamma=model.coef_["gamma"]))
+    for model_name, model_creator, grid, in models_and_grids:
+        for sparsity_level in tqdm(grid, desc=f"{model_name}"):
+            model = model_creator(sparsity_level)
+            model.fit_problem(problem)
+            oracle = LinearLMEOracle(problem)
+            loss = oracle.loss(beta=model.coef_["beta"], gamma=model.coef_["gamma"])
+            bic = oracle.jones2010bic(beta=model.coef_["beta"], gamma=model.coef_["gamma"])
+            aic = oracle.vaida2005aic(beta=model.coef_["beta"], gamma=model.coef_["gamma"])
+            muller_ic = oracle.muller_hui_2016ic(beta=model.coef_["beta"], gamma=model.coef_["gamma"])
+            predictions = model.predict_problem(problem)
+            records.append({
+                "idx": idx,
+                "reg": model_name,
+                "sparsity": sparsity_level,
+                "ell": ell,
+                "loglikelihood": loss,
+                "vaida_aic": aic,
+                "jones_bic": bic,
+                "muller_ic": muller_ic,
+                **dict(zip([f"fixed_{feature}" for feature in problem.fixed_features_columns], model.coef_["beta"])),
+                **dict(zip([f"random_{feature}" for feature in problem.random_features_columns], model.coef_["gamma"])),
+            })
+            all_predictions[f"model_{idx}"] = predictions
+            idx += 1
+            if model_name == "L0":
+                nnz_tbeta = sparsity_level
+                nnz_tgamma = nnz_tbeta - 1
+                tbetas[nnz_tbeta - 2, :] = model.coef_["beta"]
+                tgammas[nnz_tgamma - 1, :] = model.coef_["gamma"]
+                losses.append(loss)
+                selection_aics.append(bic)
+
+    records = pd.DataFrame.from_records(records, index='idx')
+    records.to_json(dataset_path.parent / "selections.json", orient="records")
+    all_predictions.to_json(dataset_path.parent / "predictions.json", orient="records")
 
     colors = sns.color_palette("husl", problem.num_fixed_features)
 
@@ -203,8 +265,6 @@ def generate_bullying_experiment(dataset_path, figures_directory):
         f"Random feature selection saved as as {figures_directory / f'{dataset_path.stem}_random_feature_selection.jpg'}")
     ## Random feature selection plot
 
-
-
     nnz_tgammas = np.array(range(1, len(categorical_features_columns) + 2, 1))
     gamma_features_labels = []
     for i, feature in enumerate(["intercept"] + categorical_features_columns):
@@ -238,7 +298,8 @@ def generate_bullying_experiment(dataset_path, figures_directory):
                    gamma_predicted_significance)
 
     figure2.savefig(figures_directory / f"{dataset_path.stem}_random_feature_selection.jpg")
-    print(f"Random feature selection saved as as {figures_directory / f'{dataset_path.stem}_random_feature_selection.jpg'}")
+    print(
+        f"Random feature selection saved as as {figures_directory / f'{dataset_path.stem}_random_feature_selection.jpg'}")
 
     # plot the same data on two separate plots
     for i, feature in enumerate(["intercept", "time"] + categorical_features_columns):
@@ -257,8 +318,8 @@ def generate_bullying_experiment(dataset_path, figures_directory):
         beta_predicted_significance = np.array([np.abs(tbetas[j, i]) >= np.sqrt(tol) for i, f in
                                                 enumerate(beta_features_labels)])
         tp, tn, fp, fn = plot_selection(beta_assessment_plot, nnz_tbetas[j], beta_historic_significance,
-                       beta_predicted_significance, add_labels= j == 0)
-        accuracies.append((tp+tn)/(tp+tn+fp+fn))
+                                        beta_predicted_significance, add_labels=j == 0)
+        accuracies.append((tp + tn) / (tp + tn + fp + fn))
 
     beta_assessment_plot.set_xticks(nnz_tbetas)
     beta_assessment_plot.set_xticklabels([f'{a}\n\n{b:.2f}' for a, b in zip(nnz_tbetas, accuracies)], fontsize=12)
@@ -266,10 +327,12 @@ def generate_bullying_experiment(dataset_path, figures_directory):
     beta_assessment_plot.text(-1.54, -1.26, "NNZ Covariates", fontsize=12)
     beta_assessment_plot.text(-.35, -2.46, "Accuracy", fontsize=12)
     from matplotlib.patches import FancyBboxPatch, Patch
-    rect = FancyBboxPatch((argmin_aic + 2 - 0.25, -.20), 0.5, 12.25, boxstyle="Round", linewidth=1, edgecolor='orange', facecolor='none')
+    rect = FancyBboxPatch((argmin_aic + 2 - 0.25, -.20), 0.5, 12.25, boxstyle="Round", linewidth=1, edgecolor='orange',
+                          facecolor='none')
     beta_assessment_plot.add_patch(rect)
     handles, labels = beta_assessment_plot.get_legend_handles_labels()
-    beta_assessment_plot.legend(handles + [Patch(facecolor='none', edgecolor='orange')], labels + ["Chosen by BIC"], bbox_to_anchor=(1.38, 1.0), loc='upper right', fontsize=12)
+    beta_assessment_plot.legend(handles + [Patch(facecolor='none', edgecolor='orange')], labels + ["Chosen by BIC"],
+                                bbox_to_anchor=(1.38, 1.0), loc='upper right', fontsize=12)
 
     figure3.tight_layout()
     figure3.savefig(figures_directory / f"{dataset_path.stem}_assessment_selection.jpg")
@@ -287,22 +350,26 @@ def plot_selection(ax, x, y_true, y_pred, add_labels=True):
 
     ax.scatter([x] * len(y_true),
                [None if t == False else i for i, t in
-                enumerate(true_pos)], s=80, facecolors='none', edgecolors='g', label="True Positive" if add_labels else None)
+                enumerate(true_pos)], s=80, facecolors='none', edgecolors='g',
+               label="True Positive" if add_labels else None)
     ax.scatter([x] * len(y_true),
                [None if t == False else i for i, t in
-                enumerate(false_pos)], s=80, facecolors='r', edgecolors='r', label="False Positive" if add_labels else None)
+                enumerate(false_pos)], s=80, facecolors='r', edgecolors='r',
+               label="False Positive" if add_labels else None)
     ax.scatter([x] * len(y_true),
                [None if t == False else i for i, t in
-                enumerate(true_neg)], marker='X', s=80, facecolors='none', edgecolors='g', label="True Negative" if add_labels else None)
+                enumerate(true_neg)], marker='X', s=80, facecolors='none', edgecolors='g',
+               label="True Negative" if add_labels else None)
     ax.scatter([x] * len(y_true),
                [None if t == False else i for i, t in
-                enumerate(false_neg)], marker='X', s=80, facecolors='r', edgecolors='r', label="False Negative" if add_labels else None)
+                enumerate(false_neg)], marker='X', s=80, facecolors='r', edgecolors='r',
+               label="False Negative" if add_labels else None)
     ax.legend()
     return sum(true_pos), sum(true_neg), sum(false_pos), sum(false_neg)
 
 
 if __name__ == "__main__":
-    base_directory = Path("/Users/aksh/Storage/repos/skmixed-experiments/paper_sum2021")
+    base_directory = Path("/Users/aksh/Storage/repos/msr3-paper/bullying")
     dataset_path = base_directory / "bullying_data.csv"
     figures_directory = base_directory / "figures"
     generate_bullying_experiment(dataset_path, figures_directory)
