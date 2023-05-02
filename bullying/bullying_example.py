@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import altair
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
@@ -127,51 +128,40 @@ def generate_bullying_experiment(dataset_path, figures_directory):
     losses = []
     selection_aics = []
     records = []
-    all_predictions = data.copy()
-
+    all_predictions = []
+    fixed_coefficients = []
+    random_coefficients = []
     tol = 1e-4
     idx = 0
     ell = 50
+    sr3_model_parameters = dict(
+        max_iter_solver=30000,  # 2000
+        max_iter_oracle=10000,  # 20
+        ell=ell,  # 1000 # 50 was good
+        initializer="None",  # EM
+        tol_solver=tol,
+        tol_oracle=1e-5,
+        practical=True,
+        take_only_positive_part=True,
+        take_expected_value=False,
+        stepping="fixed"
+    )
     models_and_grids = [
-        ("L0", lambda nnz_tbeta: L0LmeModelSR3(nnz_tbeta=nnz_tbeta,
-                                         nnz_tgamma=nnz_tbeta - 1,
-                                         max_iter_solver=30000,  # 2000
-                                         max_iter_oracle=10000,  # 20
-                                         ell=ell,  # 1000 # 50 was good
-                                         initializer="None",  # EM
-                                         tol_solver=tol,
-                                         tol_oracle=1e-5,
-                                         practical=True
-                                         ),
-         range(len(categorical_features_columns) + 2, 1, -1)
+        # ("L0", lambda nnz_tbeta: L0LmeModelSR3(**sr3_model_parameters,
+        #                                        nnz_tbeta=nnz_tbeta,
+        #                                        nnz_tgamma=nnz_tbeta - 1,
+        #                                        ),
+        #  range(len(categorical_features_columns) + 2, 1, -1)
+        #  ),
+        ("L1", lambda lam: L1LmeModelSR3(**sr3_model_parameters, lam=lam),
+         np.logspace(-3, 1, 100)
          ),
-        ("L1", lambda lam: L1LmeModelSR3(stepping="fixed",
-                                   lam=lam,
-                                   ell=ell,
-                                   max_iter_solver=30000,
-                                   max_iter_oracle=10000,
-                                   take_only_positive_part=True,
-                                   take_expected_value=False,
-                                   tol_solver=tol,
-                                   tol_oracle=1e-5,
-                                   practical=True),
-         np.logspace(-4, 2, 20)
+        ("SCAD", lambda lam: SCADLmeModelSR3(**sr3_model_parameters, lam=lam),
+         np.logspace(-3, 1, 100),
          ),
-        ("SCAD", lambda lam: SCADLmeModelSR3(stepping="fixed",
-                                   lam=lam,
-                                   ell=ell,
-                                   max_iter_solver=30000,
-                                   max_iter_oracle=10000,
-                                   take_only_positive_part=True,
-                                   take_expected_value=False,
-                                   tol_solver=tol,
-                                   tol_oracle=1e-5,
-                                   practical=True),
-         np.logspace(-4, 2, 20),
-         ),
-         ("No Regularizer", lambda _: SimpleLMEModel(),
-          [None]
-          )
+        # ("No Regularizer", lambda _: SimpleLMEModel(),
+        #  [None]
+        #  )
     ]
 
     for model_name, model_creator, grid, in models_and_grids:
@@ -184,19 +174,30 @@ def generate_bullying_experiment(dataset_path, figures_directory):
             aic = oracle.vaida2005aic(beta=model.coef_["beta"], gamma=model.coef_["gamma"])
             muller_ic = oracle.muller_hui_2016ic(beta=model.coef_["beta"], gamma=model.coef_["gamma"])
             predictions = model.predict_problem(problem)
-            records.append({
-                "idx": idx,
+            records += [{
+                "model_id": idx,
                 "reg": model_name,
                 "sparsity": sparsity_level,
                 "ell": ell,
-                "loglikelihood": loss,
-                "vaida_aic": aic,
-                "jones_bic": bic,
-                "muller_ic": muller_ic,
-                **dict(zip([f"fixed_{feature}" for feature in problem.fixed_features_columns], model.coef_["beta"])),
-                **dict(zip([f"random_{feature}" for feature in problem.random_features_columns], model.coef_["gamma"])),
-            })
-            all_predictions[f"model_{idx}"] = predictions
+                "ic_type": ic_type,
+                "ic_value": ic_value,
+            } for ic_type, ic_value in {"AIC": aic, "BIC": bic}.items()]
+            fixed_coefficients += [{
+                "model_id": idx,
+                "feature": feature,
+                "value": value
+            } for feature, value in zip(['intercept'] + problem.fixed_features_columns, model.coef_["beta"])]
+            random_coefficients += [{
+                "model_id": idx,
+                "feature": feature,
+                "value": value,
+            } for feature, value in zip(['intercept'] + problem.random_features_columns, model.coef_["gamma"])]
+            current_predictions = data[[col_group, col_target, col_se, 'cohort']].copy()
+            current_predictions['model_id'] = idx
+            current_predictions['prediction'] = predictions
+            current_predictions['sparsity'] = sparsity_level
+            current_predictions['reg'] = model_name
+            all_predictions.append(current_predictions)
             idx += 1
             if model_name == "L0":
                 nnz_tbeta = sparsity_level
@@ -206,12 +207,19 @@ def generate_bullying_experiment(dataset_path, figures_directory):
                 losses.append(loss)
                 selection_aics.append(bic)
 
-    records = pd.DataFrame.from_records(records, index='idx')
+    records = pd.DataFrame.from_records(records)
     records.to_json(dataset_path.parent / "selections.json", orient="records")
+    fixed_coefficients = pd.DataFrame.from_records(fixed_coefficients)
+    fixed_coefficients.to_json(dataset_path.parent / "fixed_coefficients.json", orient="records")
+    random_coefficients = pd.DataFrame.from_records(random_coefficients)
+    random_coefficients.to_json(dataset_path.parent / "random_coefficients.json", orient="records")
+    all_predictions = pd.concat(all_predictions)
+    cohort_to_group = {cluster: number for number, cluster in enumerate(all_predictions['cohort'].unique())}
+    all_predictions['cohort_id'] = all_predictions['cohort'].map(cohort_to_group)
     all_predictions.to_json(dataset_path.parent / "predictions.json", orient="records")
 
     colors = sns.color_palette("husl", problem.num_fixed_features)
-
+    altair.selection_multi()
     nnz_tbetas = np.array(range(2, len(categorical_features_columns) + 3, 1))
     beta_features_labels = []
     for i, feature in enumerate(["intercept", "time"] + categorical_features_columns):
