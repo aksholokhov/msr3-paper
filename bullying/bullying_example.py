@@ -11,7 +11,7 @@ import seaborn as sns
 
 from pysr3.lme.problems import LMEProblem
 from pysr3.lme.oracles import LinearLMEOracle, LinearLMEOracleSR3
-from pysr3.lme.models import SimpleLMEModel, L0LmeModel, L0LmeModelSR3, L1LmeModelSR3, SCADLmeModelSR3
+from pysr3.lme.models import SimpleLMEModel, L0LmeModel, L0LmeModelSR3, L1LmeModel, L1LmeModelSR3, SCADLmeModelSR3
 
 # np.seterr(all='raise', invalid='raise')
 
@@ -153,10 +153,16 @@ def generate_bullying_experiment(dataset_path, figures_directory):
         #                                        ),
         #  range(len(categorical_features_columns) + 2, 1, -1)
         #  ),
-        ("L1", lambda lam: L1LmeModelSR3(**sr3_model_parameters, lam=lam),
+        # ("L1", lambda lam: L1LmeModel(**{**sr3_model_parameters, "stepping": 'fixed', "fixed_step_len": 1e-3, "lam": lam}),
+        # np.logspace(-3, 1, 100)
+        # ),
+        ("L1-LS", lambda lam: L1LmeModel(**{**sr3_model_parameters, "stepping": 'line-search', "lam": lam}),
          np.logspace(-3, 1, 100)
          ),
-        ("SCAD", lambda lam: SCADLmeModelSR3(**sr3_model_parameters, lam=lam),
+        ("L1-SR3", lambda lam: L1LmeModelSR3(**sr3_model_parameters, lam=lam),
+         np.logspace(-3, 1, 100)
+         ),
+        ("SCAD-SR3", lambda lam: SCADLmeModelSR3(**sr3_model_parameters, lam=lam),
          np.logspace(-3, 1, 100),
          ),
         # ("No Regularizer", lambda _: SimpleLMEModel(),
@@ -173,7 +179,21 @@ def generate_bullying_experiment(dataset_path, figures_directory):
             bic = oracle.jones2010bic(beta=model.coef_["beta"], gamma=model.coef_["gamma"])
             aic = oracle.vaida2005aic(beta=model.coef_["beta"], gamma=model.coef_["gamma"])
             muller_ic = oracle.muller_hui_2016ic(beta=model.coef_["beta"], gamma=model.coef_["gamma"])
+            nnz_fe_coefficients = sum(model.coef_["beta"] != 0)
+            nnz_re_coefficients = sum(model.coef_["gamma"] != 0)
             predictions = model.predict_problem(problem)
+            cov_ys = oracle.covariance_y(beta=model.coef_["beta"], gamma=model.coef_["gamma"])
+
+            current_predictions = data[[col_group, col_target, col_se, 'cohort']].copy()
+            current_predictions['model_id'] = idx
+            current_predictions['observations_id'] = list(range(len(predictions)))
+            current_predictions['prediction'] = predictions
+            current_predictions['prediction_se'] = np.sqrt(np.concatenate([np.diag(cov_y) for cov_y in cov_ys]))
+            current_predictions['outlier'] = (current_predictions[col_target] - 2*current_predictions[col_se] < current_predictions['prediction']) & (current_predictions['prediction'] < current_predictions[col_target] + 2*current_predictions[col_se])
+            current_predictions['outlier'] = 1 - current_predictions['outlier'].astype(int)
+            current_predictions['sparsity'] = sparsity_level
+            current_predictions['reg'] = model_name
+
             records += [{
                 "model_id": idx,
                 "reg": model_name,
@@ -181,7 +201,7 @@ def generate_bullying_experiment(dataset_path, figures_directory):
                 "ell": ell,
                 "ic_type": ic_type,
                 "ic_value": ic_value,
-            } for ic_type, ic_value in {"AIC": aic, "BIC": bic}.items()]
+            } for ic_type, ic_value in {"AIC": aic, "BIC": bic, "NNZ FE": nnz_fe_coefficients, "NNZ RE": nnz_re_coefficients}.items()]
             fixed_coefficients += [{
                 "model_id": idx,
                 "feature": feature,
@@ -192,11 +212,7 @@ def generate_bullying_experiment(dataset_path, figures_directory):
                 "feature": feature,
                 "value": value,
             } for feature, value in zip(['intercept'] + problem.random_features_columns, model.coef_["gamma"])]
-            current_predictions = data[[col_group, col_target, col_se, 'cohort']].copy()
-            current_predictions['model_id'] = idx
-            current_predictions['prediction'] = predictions
-            current_predictions['sparsity'] = sparsity_level
-            current_predictions['reg'] = model_name
+
             all_predictions.append(current_predictions)
             idx += 1
             if model_name == "L0":

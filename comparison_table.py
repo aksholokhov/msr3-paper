@@ -215,9 +215,13 @@ def generate_benchmark_table(args):
     grid = plt.GridSpec(nrows=2, ncols=1, wspace=0.2, hspace=0.3)
     ax = [plt.subplot(grid[0, 0]), plt.subplot(grid[1, 0])]
     fig.set_size_inches(9, 6)
+    pt = sns.color_palette("colorblind")
+    palette = {"PGD": pt[0], "MSR3": pt[1], "MSR3-fast": pt[2]}
     #sns.set(font_scale=1.2)
-    sns.boxplot(x="Regularizer", y="Accuracy", hue="Model", data=plots_data, palette="inferno", width=0.5, ax=ax[0])
-    sns.boxplot(x="Regularizer", y="Time", hue="Model", data=plots_data, palette="inferno", width=0.5, ax=ax[1])
+    ax[0].set_ylim(0.5, 1.1)
+    ax[1].set_ylim(1e-2, 1e3)
+    sns.boxplot(x="Regularizer", y="Accuracy", hue="Model", data=plots_data, palette=palette, width=0.5, ax=ax[0])
+    sns.boxplot(x="Regularizer", y="Time", hue="Model", data=plots_data, palette=palette, width=0.5, ax=ax[1])
     ax[1].set_yscale("log")
     ax[0].legend(loc='upper center', ncol=3, fancybox=True, fontsize=12, bbox_to_anchor=(0.5, 1.2))
     ax[0].set_xticklabels(ax[0].get_xticklabels(), fontsize=12)
@@ -231,7 +235,6 @@ def generate_benchmark_table(args):
     ax[1].set_yticklabels(ax[1].get_yticklabels(), fontsize=12)
     ax[1].set_xlabel("Regularizer", fontsize=12)
     ax[1].set_ylabel("Time", fontsize=12)
-
     plt.yticks(fontsize=12)
     plt.savefig(experiment_folder / "figures" / "benchmark.jpg")
     plt.show()
